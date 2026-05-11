@@ -1,0 +1,14 @@
+{
+  "source": "live",
+  "summary": {
+    "totalValue": 251315.72,
+    "availableCash": 251168.83,
+    "targetBP": 125657.86,
+    "netTheta": 0,
+    "deltaExposure": 0,
+    "change24h": 0
+  },
+  "positions": [],
+  "history": [],
+  "lastUpdate": "12:42:38"
+}
