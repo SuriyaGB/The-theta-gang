@@ -5,11 +5,11 @@ import path from 'path';
 export async function GET() {
   try {
     const dataPath = path.resolve(process.cwd(), 'public/data.json');
-    
+
     if (!fs.existsSync(dataPath)) {
-      return NextResponse.json({ 
-        source: 'mock', 
-        message: 'Real data not exported yet. Please run: python3 data_bridge.py' 
+      return NextResponse.json({
+        source: 'mock',
+        message: 'Real data not exported yet. Please run: python3 data_bridge.py'
       });
     }
 

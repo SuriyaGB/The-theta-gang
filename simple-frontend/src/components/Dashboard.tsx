@@ -1,37 +1,37 @@
 'use client';
 
 import React from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Activity, 
-  Clock, 
-  ChevronRight, 
-  Search, 
-  Bell, 
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Activity,
+  Clock,
+  ChevronRight,
+  Search,
+  Bell,
   Settings,
   LayoutDashboard,
   Briefcase,
   History,
   PieChart as PieChartIcon
 } from 'lucide-react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
 } from 'recharts';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { 
-  portfolioSummary as mockSummary, 
-  performanceData, 
-  activePositions as mockPositions, 
-  tradeHistory as mockHistory 
+import {
+  portfolioSummary as mockSummary,
+  performanceData,
+  activePositions as mockPositions,
+  tradeHistory as mockHistory
 } from '@/lib/mockData';
 import { useEffect, useState } from 'react';
 
@@ -41,6 +41,7 @@ const Dashboard = () => {
     summary: { totalValue: 0, change24h: 0, availableCash: 0, netTheta: 0, deltaExposure: 0, targetBP: 0 },
     positions: [],
     history: [],
+    performance: [],
     source: 'loading'
   });
   const [loading, setLoading] = useState(true);
@@ -55,6 +56,7 @@ const Dashboard = () => {
             summary: { ...mockSummary, ...json.summary },
             positions: json.positions || [],
             history: json.history || [],
+            performance: json.performance || [],
             source: 'live'
           });
         }
@@ -67,7 +69,8 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  const { summary, positions, history } = data;
+  const { summary, positions, history, performance } = data;
+  const chartData = performance.length > 0 ? performance : performanceData;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -81,35 +84,35 @@ const Dashboard = () => {
         </div>
 
         <nav className="flex flex-col gap-2">
-          <NavItem 
-            icon={<LayoutDashboard size={20} />} 
-            label="Dashboard" 
-            active={activeTab === 'dashboard'} 
-            onClick={() => setActiveTab('dashboard')} 
+          <NavItem
+            icon={<LayoutDashboard size={20} />}
+            label="Dashboard"
+            active={activeTab === 'dashboard'}
+            onClick={() => setActiveTab('dashboard')}
           />
-          <NavItem 
-            icon={<Briefcase size={20} />} 
-            label="Portfolio" 
-            active={activeTab === 'portfolio'} 
-            onClick={() => setActiveTab('portfolio')} 
+          <NavItem
+            icon={<Briefcase size={20} />}
+            label="Portfolio"
+            active={activeTab === 'portfolio'}
+            onClick={() => setActiveTab('portfolio')}
           />
-          <NavItem 
-            icon={<History size={20} />} 
-            label="History" 
-            active={activeTab === 'history'} 
-            onClick={() => setActiveTab('history')} 
+          <NavItem
+            icon={<History size={20} />}
+            label="History"
+            active={activeTab === 'history'}
+            onClick={() => setActiveTab('history')}
           />
-          <NavItem 
-            icon={<PieChartIcon size={20} />} 
-            label="Analytics" 
-            active={activeTab === 'analytics'} 
-            onClick={() => setActiveTab('analytics')} 
+          <NavItem
+            icon={<PieChartIcon size={20} />}
+            label="Analytics"
+            active={activeTab === 'analytics'}
+            onClick={() => setActiveTab('analytics')}
           />
-          <NavItem 
-            icon={<Settings size={20} />} 
-            label="Settings" 
-            active={activeTab === 'settings'} 
-            onClick={() => setActiveTab('settings')} 
+          <NavItem
+            icon={<Settings size={20} />}
+            label="Settings"
+            active={activeTab === 'settings'}
+            onClick={() => setActiveTab('settings')}
           />
         </nav>
 
@@ -134,16 +137,16 @@ const Dashboard = () => {
               <Clock size={14} /> Last update: 13:52 PST
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3 w-full md:w-auto">
             <div className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase border ${data.source === 'live' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-amber-500/10 border-amber-500/30 text-amber-500'}`}>
               {data.source} Data
             </div>
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search symbols..." 
+              <input
+                type="text"
+                placeholder="Search symbols..."
                 className="w-full bg-secondary/50 border border-border rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
               />
             </div>
@@ -156,30 +159,30 @@ const Dashboard = () => {
 
         {/* Top Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard 
-            title="Net Liquidation" 
-            value={`$${summary.totalValue.toLocaleString()}`} 
+          <StatCard
+            title="Net Liquidation"
+            value={`$${summary.totalValue.toLocaleString()}`}
             change={`+${summary.change24h}%`}
             trend="up"
             icon={<DollarSign size={20} className="text-emerald-500" />}
           />
-          <StatCard 
-            title="Excess Liquidity" 
-            value={`$${summary.availableCash.toLocaleString()}`} 
+          <StatCard
+            title="Excess Liquidity"
+            value={`$${summary.availableCash.toLocaleString()}`}
             change="Safe"
             trend="up"
             icon={<Activity size={20} className="text-primary" />}
           />
-          <StatCard 
-            title="Target BP Usage" 
-            value={`$${summary.targetBP?.toLocaleString()}`} 
+          <StatCard
+            title="Target BP Usage"
+            value={`$${summary.targetBP?.toLocaleString()}`}
             change="100% Cushion"
             trend="neutral"
             icon={<Briefcase size={20} className="text-amber-500" />}
           />
-          <StatCard 
-            title="Net Theta" 
-            value={`$${summary.netTheta.toLocaleString()}/day`} 
+          <StatCard
+            title="Net Theta"
+            value={`$${summary.netTheta.toLocaleString()}/day`}
             change="Stable"
             trend="up"
             icon={<TrendingUp size={20} className="text-rose-500" />}
@@ -196,17 +199,17 @@ const Dashboard = () => {
               </div>
               <div className="h-[300px] w-full min-h-[300px]">
                 <ResponsiveContainer width="99%" height="99%">
-                  <AreaChart data={performanceData}>
+                  <AreaChart data={chartData}>
                     <defs>
                       <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value/1000}k`} />
-                    <Tooltip 
+                    <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value / 1000}k`} />
+                    <Tooltip
                       contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }}
                       itemStyle={{ color: '#f8fafc' }}
                     />
@@ -320,7 +323,7 @@ const Dashboard = () => {
 };
 
 const NavItem = ({ icon, label, active = false, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void }) => (
-  <button 
+  <button
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-primary text-white glow-blue' : 'text-muted-foreground hover:bg-accent hover:text-foreground'}`}
   >
@@ -330,7 +333,7 @@ const NavItem = ({ icon, label, active = false, onClick }: { icon: React.ReactNo
 );
 
 const StatCard = ({ title, value, change, trend, icon }: { title: string, value: string, change: string, trend: 'up' | 'down' | 'neutral', icon: React.ReactNode }) => (
-  <motion.div 
+  <motion.div
     whileHover={{ y: -5 }}
     className="glass-card p-5 rounded-2xl flex flex-col gap-3 relative overflow-hidden"
   >
@@ -338,11 +341,10 @@ const StatCard = ({ title, value, change, trend, icon }: { title: string, value:
       <div className="p-2 bg-secondary rounded-lg">
         {icon}
       </div>
-      <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md ${
-        trend === 'up' ? 'bg-emerald-500/20 text-emerald-500' : 
-        trend === 'down' ? 'bg-rose-500/20 text-rose-500' : 
-        'bg-muted text-muted-foreground'
-      }`}>
+      <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md ${trend === 'up' ? 'bg-emerald-500/20 text-emerald-500' :
+          trend === 'down' ? 'bg-rose-500/20 text-rose-500' :
+            'bg-muted text-muted-foreground'
+        }`}>
         {trend === 'up' && <TrendingUp size={12} />}
         {trend === 'down' && <TrendingDown size={12} />}
         {change}

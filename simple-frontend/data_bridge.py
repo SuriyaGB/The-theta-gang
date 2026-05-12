@@ -16,13 +16,12 @@ def export_data():
     cursor = conn.cursor()
 
     try:
-        # 1. Account Summary
+        # Get summary
         cursor.execute('SELECT summary_json FROM account_snapshots ORDER BY created_at DESC LIMIT 1')
         row = cursor.fetchone()
         summary = {}
         if row:
             data = json.loads(row['summary_json'])
-            # Use NetLiquidation first, then fallback to EquityWithLoanValue or AvailableFunds
             total_val = data.get('NetLiquidation', {}).get('value', 
                         data.get('EquityWithLoanValue', {}).get('value', '0'))
             
@@ -68,12 +67,34 @@ def export_data():
                 "status": "FILLED"
             })
 
+        # 4. Performance (Graph)
+        cursor.execute('SELECT created_at, summary_json FROM account_snapshots ORDER BY created_at ASC')
+        perf_rows = cursor.fetchall()
+        performance = []
+        for r in perf_rows:
+            try:
+                s_data = json.loads(r['summary_json'])
+                val = s_data.get('NetLiquidation', {}).get('value', 
+                      s_data.get('EquityWithLoanValue', {}).get('value', 0))
+                
+                # Format time to "May 07"
+                dt = datetime.fromisoformat(r['created_at'].split('.')[0].replace(' ', 'T'))
+                time_label = dt.strftime('%b %d')
+                
+                performance.append({
+                    "name": time_label,
+                    "value": float(val)
+                })
+            except:
+                continue
+
         # Save to JSON
         final_data = {
             "source": "live",
             "summary": summary,
             "positions": positions,
             "history": history,
+            "performance": performance,
             "lastUpdate": datetime.now().strftime("%H:%M:%S")
         }
 

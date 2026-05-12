@@ -10,5 +10,63 @@
   },
   "positions": [],
   "history": [],
-  "lastUpdate": "12:42:38"
+  "performance": [
+    {
+      "name": "May 07",
+      "value": 251273.71
+    },
+    {
+      "name": "May 07",
+      "value": 251273.71
+    },
+    {
+      "name": "May 07",
+      "value": 251273.71
+    },
+    {
+      "name": "May 08",
+      "value": 251294.75
+    },
+    {
+      "name": "May 09",
+      "value": 251315.72
+    },
+    {
+      "name": "May 09",
+      "value": 251315.72
+    },
+    {
+      "name": "May 09",
+      "value": 251315.72
+    },
+    {
+      "name": "May 09",
+      "value": 251315.72
+    },
+    {
+      "name": "May 11",
+      "value": 251315.72
+    },
+    {
+      "name": "May 11",
+      "value": 251315.72
+    },
+    {
+      "name": "May 11",
+      "value": 251315.72
+    },
+    {
+      "name": "May 11",
+      "value": 251315.72
+    },
+    {
+      "name": "May 11",
+      "value": 251315.72
+    },
+    {
+      "name": "May 12",
+      "value": 251315.72
+    }
+  ],
+  "lastUpdate": "10:24:59"
 }
