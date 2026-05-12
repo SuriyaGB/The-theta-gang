@@ -27,12 +27,6 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import {
-  portfolioSummary as mockSummary,
-  performanceData,
-  activePositions as mockPositions,
-  tradeHistory as mockHistory
-} from '../lib/mockdata';
 import { useEffect, useState } from 'react';
 
 const Dashboard = () => {
@@ -51,17 +45,16 @@ const Dashboard = () => {
       try {
         const res = await fetch('/api/data');
         const json = await res.json();
-        if (json.source === 'live') {
-          setData({
-            summary: { ...mockSummary, ...json.summary },
-            positions: json.positions || [],
-            history: json.history || [],
-            performance: json.performance || [],
-            source: 'live'
-          });
-        }
+        setData({
+          summary: json.summary || { totalValue: 0, change24h: 0, availableCash: 0, netTheta: 0, deltaExposure: 0, targetBP: 0 },
+          positions: json.positions || [],
+          history: json.history || [],
+          performance: json.performance || [],
+          source: json.source || 'live'
+        });
       } catch (err) {
         console.error('Failed to fetch live data:', err);
+        setData((prev: any) => ({ ...prev, source: 'error' }));
       } finally {
         setLoading(false);
       }
@@ -70,7 +63,7 @@ const Dashboard = () => {
   }, []);
 
   const { summary, positions, history, performance } = data;
-  const chartData = performance.length > 0 ? performance : performanceData;
+  const chartData = performance;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
