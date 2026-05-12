@@ -32,7 +32,7 @@ import {
   performanceData,
   activePositions as mockPositions,
   tradeHistory as mockHistory
-} from '@/lib/mockData';
+} from '../lib/mockData';
 import { useEffect, useState } from 'react';
 
 const Dashboard = () => {
