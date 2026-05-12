@@ -1,6 +1,6 @@
-name: Deploy VPS
+name: Deploy ThetaGang VPS
 
-# Manual deployment trigger from GitHub Actions UI
+# Manual trigger from GitHub Actions UI
 on:
   workflow_dispatch:
 
@@ -10,38 +10,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout latest repository code
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
       # Connect to Hostinger VPS using SSH
-      - name: Deploy Hermes Agent
+      - name: Update ThetaGang Runtime
         uses: appleboy/ssh-action@v1.0.3
 
         with:
-          # VPS Public IP or Domain
+          # VPS Public IP / Domain
           host: ${{ secrets.HOST }}
 
-          # VPS SSH username
+          # VPS SSH Username
           username: root
 
-          # Private SSH key stored in GitHub Secrets
+          # SSH Private Key stored in GitHub Secrets
           key: ${{ secrets.SSH_KEY }}
 
           # Commands executed inside VPS
           script: |
 
-            # Navigate to Hermes project directory
-            cd /opt/hermes
+            echo "======================================="
+            echo "Starting ThetaGang VPS Update"
+            echo "======================================="
 
-            # Pull latest source code from GitHub
-            git pull origin main
+            # Pull latest official ThetaGang image
+            docker pull brndnmtthws/thetagang:main
 
-            # Build updated Docker images
-            # Restart only required containers
-            # Avoids full downtime compared to docker compose down
-            docker compose up -d --build
+            # Remove stopped/exited containers
+            docker container prune -f
 
-            # Remove old unused Docker images
-            # Prevents VPS disk space issues
-            docker image prune -f
+            # Remove unused Docker images
+            docker image prune -af
+
+            echo "======================================="
+            echo "Docker Images"
+            echo "======================================="
+            docker images
+
+            echo "======================================="
+            echo "Current Containers"
+            echo "======================================="
+            docker ps -a
+
+            echo "======================================="
+            echo "Cron Scheduler"
+            echo "======================================="
+            crontab -l
+
+            echo "======================================="
+            echo "ThetaGang VPS Update Completed"
+            echo "======================================="
