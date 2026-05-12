@@ -3,3 +3,4 @@ export const positions = [];
 export const recentTrades = [];
 export const performanceData = [];
 export const watchlist = [];
+export const tradeHistory = [];
