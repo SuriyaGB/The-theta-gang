@@ -16,7 +16,7 @@ jobs:
 
       # Connect to Hostinger VPS using SSH
       - name: Deploy Hermes Agent
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
 
         with:
           # VPS Public IP or Domain
