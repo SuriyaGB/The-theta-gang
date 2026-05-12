@@ -1,0 +1,47 @@
+name: Deploy VPS
+
+# Manual deployment trigger from GitHub Actions UI
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    # GitHub-hosted Ubuntu runner
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout latest repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Connect to Hostinger VPS using SSH
+      - name: Deploy Hermes Agent
+        uses: appleboy/ssh-action@v1.0.3
+
+        with:
+          # VPS Public IP or Domain
+          host: ${{ secrets.HOST }}
+
+          # VPS SSH username
+          username: root
+
+          # Private SSH key stored in GitHub Secrets
+          key: ${{ secrets.SSH_KEY }}
+
+          # Commands executed inside VPS
+          script: |
+
+            # Navigate to Hermes project directory
+            cd /opt/hermes
+
+            # Pull latest source code from GitHub
+            git pull origin main
+
+            # Build updated Docker images
+            # Restart only required containers
+            # Avoids full downtime compared to docker compose down
+            docker compose up -d --build
+
+            # Remove old unused Docker images
+            # Prevents VPS disk space issues
+            docker image prune -f
