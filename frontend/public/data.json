@@ -1,0 +1,72 @@
+{
+    "source": "live",
+    "summary": {
+        "totalValue": 251315.72,
+        "availableCash": 251168.83,
+        "targetBP": 125657.86,
+        "netTheta": 0,
+        "deltaExposure": 0,
+        "change24h": 0
+    },
+    "positions": [],
+    "history": [],
+    "performance": [
+        {
+            "name": "May 07",
+            "value": 251273.71
+        },
+        {
+            "name": "May 07",
+            "value": 251273.71
+        },
+        {
+            "name": "May 07",
+            "value": 251273.71
+        },
+        {
+            "name": "May 08",
+            "value": 251294.75
+        },
+        {
+            "name": "May 09",
+            "value": 251315.72
+        },
+        {
+            "name": "May 09",
+            "value": 251315.72
+        },
+        {
+            "name": "May 09",
+            "value": 251315.72
+        },
+        {
+            "name": "May 09",
+            "value": 251315.72
+        },
+        {
+            "name": "May 11",
+            "value": 251315.72
+        },
+        {
+            "name": "May 11",
+            "value": 251315.72
+        },
+        {
+            "name": "May 11",
+            "value": 251315.72
+        },
+        {
+            "name": "May 11",
+            "value": 251315.72
+        },
+        {
+            "name": "May 11",
+            "value": 251315.72
+        },
+        {
+            "name": "May 12",
+            "value": 251315.72
+        }
+    ],
+    "lastUpdate": "10:24:59"
+}
