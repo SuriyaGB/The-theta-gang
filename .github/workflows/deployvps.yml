@@ -6,16 +6,19 @@ on:
 
 jobs:
   deploy:
+
     # GitHub-hosted Ubuntu runner
     runs-on: ubuntu-latest
 
     steps:
-      # Connect to Hostinger VPS using SSH
-      - name: Update ThetaGang Runtime
+
+      # Connect to VPS server using SSH
+      - name: Connect VPS and Update ThetaGang
         uses: appleboy/ssh-action@v1.0.3
 
         with:
-          # VPS Public IP / Domain
+
+          # VPS Public IP / Domain stored in GitHub Secrets
           host: ${{ secrets.HOST }}
 
           # VPS SSH Username
@@ -24,37 +27,56 @@ jobs:
           # SSH Private Key stored in GitHub Secrets
           key: ${{ secrets.SSH_KEY }}
 
-          # Commands executed inside VPS
+          # Commands executed inside VPS server
           script: |
 
             echo "======================================="
-            echo "Starting ThetaGang VPS Update"
+            echo "Starting ThetaGang Deployment"
             echo "======================================="
 
-            # Pull latest official ThetaGang image
+            # Navigate to ThetaGang repository inside VPS
+            cd /opt/hermes
+
+            # Pull latest code changes from GitHub repository
+            git pull origin main
+
+            echo "======================================="
+            echo "Updated Repository Files"
+            echo "======================================="
+
+            # List updated files for verification
+            ls
+
+            # Pull latest official ThetaGang Docker image
             docker pull brndnmtthws/thetagang:main
 
-            # Remove stopped/exited containers
+            # Remove stopped/exited Docker containers
             docker container prune -f
 
-            # Remove unused Docker images
+            # Remove unused Docker images to free disk space
             docker image prune -af
 
             echo "======================================="
-            echo "Docker Images"
+            echo "Available Docker Images"
             echo "======================================="
+
+            # Show available Docker images
             docker images
 
             echo "======================================="
-            echo "Current Containers"
+            echo "Cron Scheduler Configuration"
             echo "======================================="
-            docker ps -a
 
-            echo "======================================="
-            echo "Cron Scheduler"
-            echo "======================================="
+            # Show configured cron jobs
             crontab -l
 
             echo "======================================="
-            echo "ThetaGang VPS Update Completed"
+            echo "Current Docker Containers"
+            echo "======================================="
+
+            # Show running/exited containers
+            docker ps -a
+
+            echo "======================================="
+            echo "ThetaGang Deployment Completed"
             echo "======================================="
