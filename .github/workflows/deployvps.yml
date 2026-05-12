@@ -12,7 +12,7 @@ jobs:
     steps:
       # Checkout latest repository code
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Connect to Hostinger VPS using SSH
       - name: Deploy Hermes Agent
