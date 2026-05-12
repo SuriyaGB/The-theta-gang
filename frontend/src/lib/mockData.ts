@@ -5,9 +5,9 @@ export const portfolioSummary = {
   availableCash: 0,
   deltaExposure: 0
 };
-export const activePositions = [];
-export const positions = [];
-export const recentTrades = [];
-export const performanceData = [];
-export const watchlist = [];
-export const tradeHistory = [];
+export const activePositions: any[] = [];
+export const positions: any[] = [];
+export const recentTrades: any[] = [];
+export const performanceData: any[] = [];
+export const watchlist: any[] = [];
+export const tradeHistory: any[] = [];
