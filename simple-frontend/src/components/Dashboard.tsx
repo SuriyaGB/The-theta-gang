@@ -36,6 +36,7 @@ const Dashboard = () => {
     positions: [],
     history: [],
     performance: [],
+    logs: [],
     source: 'loading'
   });
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,7 @@ const Dashboard = () => {
           positions: json.positions || [],
           history: json.history || [],
           performance: json.performance || [],
+          logs: json.logs || [],
           source: json.source || 'live'
         });
       } catch (err) {
@@ -62,7 +64,7 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  const { summary, positions, history, performance } = data;
+  const { summary, positions, history, performance, logs } = data;
   const chartData = performance;
 
   return (
@@ -94,6 +96,12 @@ const Dashboard = () => {
             label="History"
             active={activeTab === 'history'}
             onClick={() => setActiveTab('history')}
+          />
+          <NavItem
+            icon={<Activity size={20} />}
+            label="Live Logs"
+            active={activeTab === 'logs'}
+            onClick={() => setActiveTab('logs')}
           />
           <NavItem
             icon={<PieChartIcon size={20} />}
@@ -285,6 +293,33 @@ const Dashboard = () => {
               ) : (
                 <div className="text-center py-20 text-muted-foreground">No active positions found.</div>
               )}
+            </div>
+          )}
+
+          {/* Logs View */}
+          {activeTab === 'logs' && (
+            <div className="xl:col-span-3 glass-card rounded-2xl p-6 overflow-hidden">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Activity size={20} className="text-emerald-500" />
+                  Live Terminal Output
+                </h2>
+                <div className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
+                  Showing last 50 lines
+                </div>
+              </div>
+              <div className="bg-black/50 rounded-xl p-4 font-mono text-xs md:text-sm overflow-y-auto max-h-[600px] border border-border/50">
+                {logs && logs.length > 0 ? (
+                  logs.map((line: string, i: number) => (
+                    <div key={i} className="py-0.5 border-b border-white/5 last:border-0 text-emerald-500/90 whitespace-pre-wrap">
+                      <span className="text-muted-foreground mr-2 opacity-50">[{i+1}]</span>
+                      {line}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-muted-foreground italic">No logs available. Make sure the bot is running and logs are enabled.</div>
+                )}
+              </div>
             </div>
           )}
 
