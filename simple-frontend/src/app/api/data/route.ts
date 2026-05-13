@@ -1,23 +1,28 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 
 export async function GET() {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  
   try {
-    const dataPath = path.resolve(process.cwd(), 'public/data.json');
+    const response = await fetch(`${apiUrl}/api/data`, {
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (!fs.existsSync(dataPath)) {
-      return NextResponse.json({
-        source: 'mock',
-        message: 'Real data not exported yet. Please run: python3 data_bridge.py'
-      });
+    if (!response.ok) {
+      throw new Error(`VPS API responded with status: ${response.status}`);
     }
 
-    const fileContent = fs.readFileSync(dataPath, 'utf8');
-    const data = JSON.parse(fileContent);
-
-    return NextResponse.json(data);
+    const data = await response.json();
+    return NextResponse.json({ ...data, source: 'live-proxy' });
   } catch (error) {
-    return NextResponse.json({ source: 'error', message: (error as Error).message }, { status: 500 });
+    console.error('Proxy error:', error);
+    return NextResponse.json({ 
+      source: 'error', 
+      message: (error as Error).message,
+      apiUrl: apiUrl 
+    }, { status: 500 });
   }
 }

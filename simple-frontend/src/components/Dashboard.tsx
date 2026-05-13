@@ -46,11 +46,7 @@ const Dashboard = () => {
     async function fetchData() {
       try {
         // Use the VPS API if configured, otherwise fall back to local API
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        const fetchUrl = `${apiUrl}/api/data`;
-        
-        console.log("🔗 Dashboard connecting to:", fetchUrl || "Local Vercel API");
-        
+        const fetchUrl = '/api/data';
         const res = await fetch(fetchUrl);
         const json = await res.json();
         setData({
