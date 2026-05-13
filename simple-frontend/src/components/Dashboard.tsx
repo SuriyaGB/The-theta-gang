@@ -44,7 +44,9 @@ const Dashboard = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch('/api/data');
+        // Use the VPS API if configured, otherwise fall back to local API
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const res = await fetch(`${apiUrl}/api/data`);
         const json = await res.json();
         setData({
           summary: json.summary || { totalValue: 0, change24h: 0, availableCash: 0, netTheta: 0, deltaExposure: 0, targetBP: 0 },
@@ -62,6 +64,10 @@ const Dashboard = () => {
       }
     }
     fetchData();
+    
+    // Optional: Refresh every 30 seconds for true "live" feel
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const { summary, positions, history, performance, logs } = data;
