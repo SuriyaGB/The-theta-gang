@@ -10,13 +10,42 @@ app = FastAPI()
 # Enable CORS so your Vercel frontend can talk to your VPS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, you can replace "*" with your Vercel URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 DB_PATH = "data/thetagang.db"
+LOG_PATH = "bot.log"
+CONFIG_PATH = "thetagang.toml"
+
+def get_logs():
+    if not os.path.exists(LOG_PATH):
+        return []
+    try:
+        with open(LOG_PATH, 'r') as f:
+            lines = f.readlines()
+            return [line.strip() for line in lines[-50:]]
+    except:
+        return []
+
+def get_config_symbols():
+    if not os.path.exists(CONFIG_PATH):
+        return []
+    try:
+        symbols = []
+        with open(CONFIG_PATH, 'r') as f:
+            content = f.read()
+            # Simple parser for symbols in toml
+            if '[[symbol]]' in content:
+                for part in content.split('[[symbol]]')[1:]:
+                    for line in part.split('\n'):
+                        if 'name =' in line:
+                            symbols.append(line.split('=')[1].strip().replace('"', '').replace("'", ""))
+        return symbols
+    except:
+        return []
 
 def get_live_data():
     if not os.path.exists(DB_PATH):
@@ -89,12 +118,33 @@ def get_live_data():
                 performance.append({"name": dt.strftime('%b %d'), "value": float(val)})
             except: continue
 
+        # 5. Live Logs and Shopping List
+        logs = get_logs()
+        symbols = get_config_symbols()
+
+        # 6. Challenge Progress
+        start_date = datetime(2026, 5, 13)
+        end_date = datetime(2026, 6, 12)
+        today = datetime.now()
+        days_elapsed = (today - start_date).days + 1
+        days_remaining = (end_date - today).days
+        
+        challenge = {
+            "day": max(1, days_elapsed),
+            "remaining": max(0, days_remaining),
+            "total": 30,
+            "percent": min(100, (days_elapsed / 30) * 100)
+        }
+
         return {
             "source": "live-vps",
             "summary": summary,
             "positions": positions,
             "history": history,
             "performance": performance,
+            "logs": logs,
+            "symbols": symbols,
+            "challenge": challenge,
             "lastUpdate": datetime.now().strftime("%H:%M:%S")
         }
 

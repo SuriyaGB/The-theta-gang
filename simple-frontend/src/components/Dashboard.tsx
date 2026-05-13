@@ -65,7 +65,7 @@ const Dashboard = () => {
       }
     }
     fetchData();
-    
+
     // Optional: Refresh every 30 seconds for true "live" feel
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
@@ -166,6 +166,25 @@ const Dashboard = () => {
         </header>
 
         {/* Top Cards */}
+        {/* Challenge Progress Bar */}
+        {data.challenge && (
+          <div className="mb-8 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-medium text-slate-400">30-Day Mission Progress</h3>
+              <span className="text-xs font-bold text-blue-400">Day {data.challenge.day} of 30</span>
+            </div>
+            <div className="w-full bg-slate-700 rounded-full h-2.5">
+              <div
+                className="bg-blue-500 h-2.5 rounded-full transition-all duration-1000"
+                style={{ width: `${data.challenge.percent}%` }}
+              ></div>
+            </div>
+            <div className="mt-2 text-[10px] text-slate-500 text-right italic">
+              Bot self-destructs in {data.challenge.remaining} days
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Net Liquidation"
@@ -319,7 +338,7 @@ const Dashboard = () => {
                 {logs && logs.length > 0 ? (
                   logs.map((line: string, i: number) => (
                     <div key={i} className="py-0.5 border-b border-white/5 last:border-0 text-emerald-500/90 whitespace-pre-wrap">
-                      <span className="text-muted-foreground mr-2 opacity-50">[{i+1}]</span>
+                      <span className="text-muted-foreground mr-2 opacity-50">[{i + 1}]</span>
                       {line}
                     </div>
                   ))
@@ -377,8 +396,8 @@ const StatCard = ({ title, value, change, trend, icon }: { title: string, value:
         {icon}
       </div>
       <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md ${trend === 'up' ? 'bg-emerald-500/20 text-emerald-500' :
-          trend === 'down' ? 'bg-rose-500/20 text-rose-500' :
-            'bg-muted text-muted-foreground'
+        trend === 'down' ? 'bg-rose-500/20 text-rose-500' :
+          'bg-muted text-muted-foreground'
         }`}>
         {trend === 'up' && <TrendingUp size={12} />}
         {trend === 'down' && <TrendingDown size={12} />}
