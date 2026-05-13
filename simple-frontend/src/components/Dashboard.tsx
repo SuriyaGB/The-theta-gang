@@ -38,6 +38,10 @@ const Dashboard = () => {
     history: [],
     performance: [],
     logs: [],
+    symbols: [],
+    shoppingList: [],
+    activeOrders: [],
+    challenge: null,
     source: 'loading'
   });
   const [loading, setLoading] = useState(true);
@@ -55,6 +59,10 @@ const Dashboard = () => {
           history: json.history || [],
           performance: json.performance || [],
           logs: json.logs || [],
+          symbols: json.symbols || [],
+          shoppingList: json.shoppingList || [],
+          activeOrders: json.activeOrders || [],
+          challenge: json.challenge || null,
           source: json.source || 'live'
         });
       } catch (err) {
@@ -220,35 +228,135 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           {/* Dashboard and Analytics View */}
           {(activeTab === 'dashboard' || activeTab === 'analytics') && (
-            <div className="xl:col-span-2 glass-card rounded-2xl p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-semibold">Portfolio Performance</h2>
-              </div>
-              <div className="h-[300px] w-full min-h-[300px]">
-                <ResponsiveContainer width="99%" height="99%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-                    <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value / 1000}k`} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }}
-                      itemStyle={{ color: '#f8fafc' }}
-                    />
-                    <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 xl:col-span-3">
+          {/* Main Chart */}
+          <div className="lg:col-span-2 glass rounded-2xl p-6 border border-border min-h-[400px]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold">Portfolio Performance</h3>
+              <div className="flex gap-2">
+                <span className="px-3 py-1 bg-primary/20 text-primary text-xs font-bold rounded-full">30D Challenge</span>
               </div>
             </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={(() => {
+                  // Group data by date to avoid repeating X-axis labels
+                  const grouped: any = {};
+                  chartData.forEach((d: any) => {
+                    if (!grouped[d.name]) grouped[d.name] = d.value;
+                    else grouped[d.name] = d.value; // Keep latest value for the day
+                  });
+                  return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+                })()}>
+                  <defs>
+                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="#64748b" 
+                    fontSize={12} 
+                    tickLine={false} 
+                    axisLine={false} 
+                    minTickGap={30}
+                  />
+                  <YAxis 
+                    stroke="#64748b" 
+                    fontSize={12} 
+                    tickLine={false} 
+                    axisLine={false}
+                    tickFormatter={(value) => `$${(value/1000).toFixed(1)}k`}
+                    domain={['dataMin - 500', 'dataMax + 500']}
+                  />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }}
+                    itemStyle={{ color: '#3b82f6' }}
+                    formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Portfolio Value']}
+                  />
+                  <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={1} fill="url(#colorValue)" strokeWidth={3} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Recent Activity / Active Orders */}
+          <div className="glass rounded-2xl p-6 border border-border">
+            <h3 className="text-lg font-bold mb-6">Active Orders</h3>
+            <div className="space-y-4">
+              {data.activeOrders && data.activeOrders.length > 0 ? (
+                data.activeOrders.map((order: any, i: number) => (
+                  <div key={i} className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 flex flex-col gap-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-bold">{order.symbol} {order.contract}</span>
+                      <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-bold rounded uppercase">{order.status}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-400">
+                      <span>{order.action} {order.qty}x</span>
+                      <span className="text-blue-400 font-bold">{order.price}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-40 text-slate-500 text-sm italic">
+                  <Activity size={32} className="mb-2 opacity-20" />
+                  No open orders
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
           )}
 
+        {/* Shopping List Section */}
+        {(activeTab === 'dashboard') && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 xl:col-span-3">
+          <div className="glass rounded-2xl p-6 border border-border">
+            <h3 className="text-lg font-bold mb-6">Decision Summary (Shopping List)</h3>
+            <div className="space-y-3">
+              {data.shoppingList && data.shoppingList.length > 0 ? (
+                data.shoppingList.map((item: any, i: number) => (
+                  <div key={i} className="flex items-start gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
+                    <div className={`mt-1 w-2 h-2 rounded-full ${item.action === 'Write' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-slate-200">{item.symbol}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${item.action === 'Write' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-400'}`}>
+                          {item.action}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 leading-relaxed">{item.detail}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-slate-500 text-sm italic py-4">No trading decisions found in latest scan.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="glass rounded-2xl p-6 border border-border">
+            <h3 className="text-lg font-bold mb-6">Tracked Assets</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {data.symbols && data.symbols.length > 0 ? (
+                data.symbols.map((symbol: string, i: number) => (
+                  <div key={i} className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 flex flex-col items-center gap-2 group hover:border-blue-500/50 transition-colors">
+                    <span className="text-xl font-black text-slate-200 group-hover:text-blue-400 transition-colors">{symbol}</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active</span>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-3 text-slate-500 text-sm italic py-4">No symbols configured.</div>
+              )}
+            </div>
+          </div>
+        </div>
+        )}
+
           {/* History View */}
-          {(activeTab === 'dashboard' || activeTab === 'history') && (
+          {(activeTab === 'history') && (
             <div className={`${activeTab === 'history' ? 'xl:col-span-3' : ''} glass-card rounded-2xl p-6`}>
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-semibold">Recent Activity</h2>

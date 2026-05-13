@@ -3,11 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 import json
 import os
+import re
 from datetime import datetime
 
 app = FastAPI()
 
-# Enable CORS so your Vercel frontend can talk to your VPS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,9 +26,52 @@ def get_logs():
     try:
         with open(LOG_PATH, 'r') as f:
             lines = f.readlines()
-            return [line.strip() for line in lines[-50:]]
+            return [line.strip() for line in lines[-100:]]
     except:
         return []
+
+def get_shopping_list(logs):
+    shopping_list = []
+    capture = False
+    for line in logs:
+        if "Put writing summary" in line or "Call writing summary" in line:
+            capture = True
+            continue
+        if capture and "│" in line and "Symbol" not in line:
+            parts = [p.strip() for p in line.split("│")]
+            if len(parts) >= 4:
+                shopping_list.append({
+                    "symbol": parts[1],
+                    "action": parts[2],
+                    "detail": parts[3]
+                })
+        if capture and "└" in line:
+            capture = False
+    return shopping_list
+
+def get_active_orders(logs):
+    orders = []
+    capture = False
+    for line in logs:
+        if "Symbol" in line and "Exchange" in line and "Contract" in line:
+            capture = True
+            continue
+        if capture and "│" in line and "Pending" in line or "Submitted" in line:
+            # Clean up the line from [24] style prefixes
+            clean_line = re.sub(r'\[\d+\]', '', line)
+            parts = [p.strip() for p in clean_line.split("│")]
+            if len(parts) >= 8:
+                orders.append({
+                    "symbol": parts[0],
+                    "contract": parts[2],
+                    "action": parts[3],
+                    "price": parts[4],
+                    "qty": parts[5],
+                    "status": parts[6]
+                })
+        if capture and "╵" in line:
+            capture = False
+    return orders
 
 def get_config_symbols():
     if not os.path.exists(CONFIG_PATH):
@@ -36,13 +79,10 @@ def get_config_symbols():
     try:
         symbols = []
         with open(CONFIG_PATH, 'r') as f:
-            content = f.read()
-            # Simple parser for symbols in toml
-            if '[[symbol]]' in content:
-                for part in content.split('[[symbol]]')[1:]:
-                    for line in part.split('\n'):
-                        if 'name =' in line:
-                            symbols.append(line.split('=')[1].strip().replace('"', '').replace("'", ""))
+            for line in f:
+                if line.startswith('[portfolio.symbols.'):
+                    symbol = line.split('.')[-1].replace(']', '').strip()
+                    symbols.append(symbol)
         return symbols
     except:
         return []
@@ -118,9 +158,11 @@ def get_live_data():
                 performance.append({"name": dt.strftime('%b %d'), "value": float(val)})
             except: continue
 
-        # 5. Live Logs and Shopping List
+        # 5. Live Logs and Parsing
         logs = get_logs()
         symbols = get_config_symbols()
+        shopping_list = get_shopping_list(logs)
+        active_orders = get_active_orders(logs)
 
         # 6. Challenge Progress
         start_date = datetime(2026, 5, 13)
@@ -144,6 +186,8 @@ def get_live_data():
             "performance": performance,
             "logs": logs,
             "symbols": symbols,
+            "shoppingList": shopping_list,
+            "activeOrders": active_orders,
             "challenge": challenge,
             "lastUpdate": datetime.now().strftime("%H:%M:%S")
         }
