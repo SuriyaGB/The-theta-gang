@@ -46,7 +46,11 @@ const Dashboard = () => {
       try {
         // Use the VPS API if configured, otherwise fall back to local API
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        const res = await fetch(`${apiUrl}/api/data`);
+        const fetchUrl = `${apiUrl}/api/data`;
+        
+        console.log("🔗 Dashboard connecting to:", fetchUrl || "Local Vercel API");
+        
+        const res = await fetch(fetchUrl);
         const json = await res.json();
         setData({
           summary: json.summary || { totalValue: 0, change24h: 0, availableCash: 0, netTheta: 0, deltaExposure: 0, targetBP: 0 },
@@ -57,7 +61,7 @@ const Dashboard = () => {
           source: json.source || 'live'
         });
       } catch (err) {
-        console.error('Failed to fetch live data:', err);
+        console.error('Failed to fetch live data from:', process.env.NEXT_PUBLIC_API_URL);
         setData((prev: any) => ({ ...prev, source: 'error' }));
       } finally {
         setLoading(false);
