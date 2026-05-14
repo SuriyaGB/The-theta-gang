@@ -473,20 +473,69 @@ const Dashboard = () => {
 
           {/* Settings View */}
           {activeTab === 'settings' && (
-            <div className="xl:col-span-3 glass-card rounded-2xl p-8">
-              <h2 className="text-xl font-bold mb-6">Application Settings</h2>
-              <div className="flex flex-col gap-6 max-w-md">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">Bot API Endpoint</label>
-                  <input type="text" className="w-full bg-secondary/50 border border-border rounded-lg py-2 px-4" defaultValue="http://localhost:3000/api/data" />
-                </div>
-                <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl border border-border">
+            <div className="xl:col-span-3 space-y-6">
+              <div className="glass-card rounded-2xl p-8">
+                <h2 className="text-xl font-bold mb-6">Network Infrastructure</h2>
+                <div className="flex flex-col gap-6 max-w-md">
                   <div>
-                    <p className="font-medium">Auto-Refresh</p>
-                    <p className="text-xs text-muted-foreground">Automatically fetch data every 60s</p>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">Primary Data Source</label>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        readOnly
+                        className="w-full bg-secondary/50 border border-border rounded-lg py-2 px-4 font-mono text-sm text-blue-400" 
+                        defaultValue="Vercel Secure Proxy (/api/data)" 
+                      />
+                      <div className="absolute right-3 top-2.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    </div>
                   </div>
-                  <div className="w-12 h-6 bg-primary rounded-full relative">
-                    <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">Backend Engine (VPS)</label>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        readOnly
+                        className="w-full bg-secondary/10 border border-border/50 rounded-lg py-2 px-4 font-mono text-xs text-slate-500" 
+                        defaultValue="ThetaGang VPS v1.0 [134.209.155.66]" 
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">The Vercel proxy securely tunnels data from your VPS analytics engine.</p>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl border border-border">
+                    <div>
+                      <p className="font-medium">Auto-Refresh</p>
+                      <p className="text-xs text-muted-foreground">Fetching data every 60s</p>
+                    </div>
+                    <div className="w-10 h-5 bg-emerald-500 rounded-full relative">
+                      <div className="absolute right-1 top-1 w-3 h-3 bg-white rounded-full" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass-card rounded-2xl p-8">
+                <h2 className="text-xl font-bold mb-6">System Health</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-secondary/20 rounded-xl border border-border flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${data.status?.database === 'Healthy' ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'}`} />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Database</p>
+                      <p className="text-sm font-bold">SQLite {data.status?.database || 'Unknown'}</p>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-secondary/20 rounded-xl border border-border flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Timezone</p>
+                      <p className="text-sm font-bold">{data.status?.timezone || 'UTC'} Engine Active</p>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-secondary/20 rounded-xl border border-border flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${data.source !== 'error' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Server Connection</p>
+                      <p className="text-sm font-bold">{data.status?.server || 'Disconnected'}</p>
+                    </div>
                   </div>
                 </div>
               </div>

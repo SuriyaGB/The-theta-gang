@@ -222,13 +222,26 @@ def get_live_data():
 
         return {
             "source": "live-vps-pro",
+            "status": {
+                "database": "Healthy",
+                "timezone": "UTC",
+                "server": "Online"
+            },
             "summary": summary, "positions": positions, "history": history, "performance": performance,
             "logs": logs, "symbols": symbols, "shoppingList": shopping_list, "activeOrders": active_orders,
             "challenge": challenge, "lastUpdate": datetime.now(timezone.utc).strftime("%H:%M:%S")
         }
 
     except Exception as e:
-        return {"source": "error", "message": str(e)}
+        return {
+            "source": "error", 
+            "status": {
+                "database": "Error",
+                "timezone": "UTC",
+                "server": "Degraded"
+            },
+            "message": str(e)
+        }
     finally:
         conn.close()
 
