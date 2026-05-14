@@ -26,17 +26,19 @@ def get_logs():
     try:
         with open(LOG_PATH, 'r') as f:
             lines = f.readlines()
-            return [line.strip() for line in lines[-100:]]
+            # Return last 200 lines for the "Live Terminal" view
+            return [line.strip() for line in lines[-200:]]
     except:
         return []
 
-def get_shopping_list(logs):
+def get_shopping_list(logs_all):
     shopping_list = []
     capture = False
-    for line in logs:
-        if "Put writing summary" in line or "Call writing summary" in line:
-            capture = True
-            continue
+    # Work backwards to find the MOST RECENT summary
+    for line in reversed(logs_all):
+        if "└" in line and capture:
+            capture = False
+            if shopping_list: break # We found the most recent one, stop
         if capture and "│" in line and "Symbol" not in line:
             parts = [p.strip() for p in line.split("│")]
             if len(parts) >= 4:
@@ -45,19 +47,19 @@ def get_shopping_list(logs):
                     "action": parts[2],
                     "detail": parts[3]
                 })
-        if capture and "└" in line:
-            capture = False
+        if "Put writing summary" in line or "Call writing summary" in line:
+            capture = True
     return shopping_list
 
-def get_active_orders(logs):
+def get_active_orders(logs_all):
     orders = []
     capture = False
-    for line in logs:
+    # Work backwards to find the MOST RECENT order table
+    for line in reversed(logs_all):
         if "Symbol" in line and "Exchange" in line and "Contract" in line:
             capture = True
             continue
-        if capture and "│" in line and "Pending" in line or "Submitted" in line:
-            # Clean up the line from [24] style prefixes
+        if capture and "│" in line and ("Pending" in line or "Submitted" in line):
             clean_line = re.sub(r'\[\d+\]', '', line)
             parts = [p.strip() for p in clean_line.split("│")]
             if len(parts) >= 8:
@@ -69,8 +71,9 @@ def get_active_orders(logs):
                     "qty": parts[5],
                     "status": parts[6]
                 })
-        if capture and "╵" in line:
+        if capture and "╵" in line: # This is the top of the table in reverse
             capture = False
+            if orders: break
     return orders
 
 def get_config_symbols():
@@ -79,10 +82,12 @@ def get_config_symbols():
     try:
         symbols = []
         with open(CONFIG_PATH, 'r') as f:
-            for line in f:
-                if line.startswith('[portfolio.symbols.'):
-                    symbol = line.split('.')[-1].replace(']', '').strip()
-                    symbols.append(symbol)
+            content = f.read()
+            # More robust regex for [portfolio.symbols.SYMBOL] or [symbol.SYMBOL]
+            matches = re.findall(r'\[\s*(?:portfolio\.)?symbols\.([A-Za-z]+)\s*\]', content)
+            if matches:
+                # Filter out 'defaults' or other non-symbol keys
+                return list(set([m.upper() for m in matches if m.lower() != 'defaults']))
         return symbols
     except:
         return []
@@ -159,10 +164,15 @@ def get_live_data():
             except: continue
 
         # 5. Live Logs and Parsing
+        all_lines = []
+        if os.path.exists(LOG_PATH):
+            with open(LOG_PATH, 'r') as f:
+                all_lines = f.readlines()
+        
         logs = get_logs()
         symbols = get_config_symbols()
-        shopping_list = get_shopping_list(logs)
-        active_orders = get_active_orders(logs)
+        shopping_list = get_shopping_list(all_lines)
+        active_orders = get_active_orders(all_lines)
 
         # 6. Challenge Progress
         start_date = datetime(2026, 5, 13)
