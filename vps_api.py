@@ -36,9 +36,15 @@ def get_shopping_list(logs_all):
     capture = False
     # Work backwards to find the MOST RECENT summary
     for line in reversed(logs_all):
-        if "└" in line and capture:
+        # In reverse, we hit the bottom of the table first
+        if "└" in line and "───" in line:
+            capture = True
+            continue
+        # In reverse, the header is at the top (last to be hit)
+        if ("Put writing summary" in line or "Call writing summary" in line) and capture:
             capture = False
-            if shopping_list: break # We found the most recent one, stop
+            if shopping_list: break
+            
         if capture and "│" in line and "Symbol" not in line:
             parts = [p.strip() for p in line.split("│")]
             if len(parts) >= 4:
@@ -47,8 +53,6 @@ def get_shopping_list(logs_all):
                     "action": parts[2],
                     "detail": parts[3]
                 })
-        if "Put writing summary" in line or "Call writing summary" in line:
-            capture = True
     return shopping_list
 
 def get_active_orders(logs_all):
@@ -56,13 +60,19 @@ def get_active_orders(logs_all):
     capture = False
     # Work backwards to find the MOST RECENT order table
     for line in reversed(logs_all):
-        if "Symbol" in line and "Exchange" in line and "Contract" in line:
+        # In reverse, hit bottom border first
+        if "╵" in line and "─────" in line:
             capture = True
             continue
-        if capture and "│" in line and ("Pending" in line or "Submitted" in line):
+        # Header is at the top
+        if "Symbol" in line and "Exchange" in line and "Contract" in line and capture:
+            capture = False
+            if orders: break
+
+        if capture and "│" in line:
             clean_line = re.sub(r'\[\d+\]', '', line)
             parts = [p.strip() for p in clean_line.split("│")]
-            if len(parts) >= 8:
+            if len(parts) >= 8 and (parts[0] != "Symbol"):
                 orders.append({
                     "symbol": parts[0],
                     "contract": parts[2],
@@ -71,9 +81,6 @@ def get_active_orders(logs_all):
                     "qty": parts[5],
                     "status": parts[6]
                 })
-        if capture and "╵" in line: # This is the top of the table in reverse
-            capture = False
-            if orders: break
     return orders
 
 def get_config_symbols():
