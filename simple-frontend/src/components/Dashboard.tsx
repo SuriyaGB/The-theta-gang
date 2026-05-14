@@ -64,7 +64,8 @@ const Dashboard = () => {
           shoppingList: json.shoppingList || [],
           activeOrders: json.activeOrders || [],
           challenge: json.challenge || null,
-          source: json.source || 'live'
+          source: json.source || 'live',
+          status: json.status || { database: 'Unknown', timezone: 'UTC', server: 'Online' }
         });
       } catch (err) {
         console.error('Failed to fetch live data from:', process.env.NEXT_PUBLIC_API_URL);
@@ -317,22 +318,28 @@ const Dashboard = () => {
 
         {/* Shopping List Section */}
         {(activeTab === 'dashboard') && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 xl:col-span-3">
-          <div className="glass rounded-2xl p-6 border border-border max-h-[500px] overflow-y-auto">
-            <h3 className="text-lg font-bold mb-6">Decision History (Last 10 Events)</h3>
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8 xl:col-span-3">
+          <div className="xl:col-span-3 glass rounded-2xl p-6 border border-border max-h-[500px] overflow-y-auto">
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+              <Activity className="text-blue-400" size={18} />
+              Decision History (Mission Log)
+            </h3>
             <div className="space-y-3">
               {data.shoppingList && data.shoppingList.length > 0 ? (
                 [...data.shoppingList].reverse().map((item: any, i: number) => (
-                  <div key={i} className="flex items-start gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
-                    <div className={`mt-1 w-2 h-2 rounded-full ${item.action === 'Write' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
-                    <div className="flex-1">
+                  <div key={i} className="flex items-start gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors border-b border-white/5 last:border-0 group">
+                    <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${item.action === 'Write' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
+                    <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-slate-200">{item.symbol}</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${item.action === 'Write' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-400'}`}>
-                          {item.action}
-                        </span>
+                        <span className="font-bold text-slate-200">{item.symbol || 'Bot Brain'}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] text-slate-500 font-mono">{item.time}</span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter ${item.action === 'Write' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-400'}`}>
+                            {item.action || 'Skip'}
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-400 leading-relaxed font-mono">{item.detail}</p>
+                      <p className="text-xs text-slate-400 leading-relaxed font-mono break-words">{item.detail}</p>
                     </div>
                   </div>
                 ))
@@ -342,18 +349,27 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="glass rounded-2xl p-6 border border-border">
-            <h3 className="text-lg font-bold mb-6">Tracked Assets</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="xl:col-span-1 glass rounded-2xl p-6 border border-border">
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+              <Briefcase className="text-blue-400" size={18} />
+              Assets
+            </h3>
+            <div className="grid grid-cols-1 gap-4">
               {data.symbols && data.symbols.length > 0 ? (
                 data.symbols.map((symbol: string, i: number) => (
-                  <div key={i} className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 flex flex-col items-center gap-2 group hover:border-blue-500/50 transition-colors">
-                    <span className="text-xl font-black text-slate-200 group-hover:text-blue-400 transition-colors">{symbol}</span>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active</span>
+                  <div key={i} className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 flex flex-col items-center gap-2 group hover:bg-blue-500/10 transition-all">
+                    <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 font-bold text-sm">
+                      {symbol[0]}
+                    </div>
+                    <span className="text-lg font-black text-slate-200 tracking-tighter">{symbol}</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Active</span>
+                    </div>
                   </div>
                 ))
               ) : (
-                <div className="col-span-3 text-slate-500 text-sm italic py-4">No symbols configured.</div>
+                <div className="text-slate-500 text-sm italic py-4">None.</div>
               )}
             </div>
           </div>

@@ -16,9 +16,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_PATH = "data/thetagang.db"
-LOG_PATH = "bot.log"
-CONFIG_PATH = "thetagang.toml"
+DB_PATH = "/opt/hermes/data/thetagang.db"
+CONFIG_PATH = "/opt/hermes/thetagang.toml"
 
 def init_db():
     """Create a table to store parsed history so it is permanent."""
@@ -39,15 +38,19 @@ def init_db():
 
 init_db()
 
+import subprocess
+
 def get_logs():
-    if not os.path.exists(LOG_PATH):
-        return []
+    """Pulls the latest logs directly from the Docker container."""
     try:
-        with open(LOG_PATH, 'r', encoding='utf-8', errors='ignore') as f:
-            lines = f.readlines()
-            return [line.strip() for line in lines[-500:]] # Only need a small window for Live Terminal
-    except:
-        return []
+        result = subprocess.run(
+            ['docker', 'logs', '--tail', '500', 'thetagang-bot-live'],
+            capture_output=True, text=True, check=True
+        )
+        # Combine stdout and stderr because IBKR/Java often logs to stderr
+        return [line.strip() for line in result.stdout.splitlines()] + [line.strip() for line in result.stderr.splitlines()]
+    except Exception as e:
+        return [f"Error fetching Docker logs: {str(e)}"]
 
 def update_persistent_history(logs_all):
     """Parses logs and saves new unique decisions to the database."""
@@ -192,12 +195,11 @@ def get_live_data():
                 })
             except: continue
 
-        # 5. Logs and Persistent Parsing
-        if os.path.exists(LOG_PATH):
-            with open(LOG_PATH, 'r', encoding='utf-8', errors='ignore') as f:
-                all_lines = f.readlines()
-                update_persistent_history(all_lines)
-                active_orders = get_active_orders(all_lines)
+        # 5. Logs and Persistent Parsing (Now from Docker!)
+        all_lines = get_logs()
+        if all_lines and len(all_lines) > 1:
+            update_persistent_history(all_lines)
+            active_orders = get_active_orders(all_lines)
         else:
             active_orders = []
 
