@@ -259,10 +259,13 @@ const Dashboard = () => {
                   <XAxis 
                     dataKey="name" 
                     stroke="#64748b" 
-                    fontSize={12} 
+                    fontSize={10} 
                     tickLine={false} 
                     axisLine={false} 
-                    minTickGap={30}
+                    minTickGap={10}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
                   />
                   <YAxis 
                     stroke="#64748b" 
@@ -270,7 +273,7 @@ const Dashboard = () => {
                     tickLine={false} 
                     axisLine={false}
                     tickFormatter={(value) => `$${(value/1000).toFixed(1)}k`}
-                    domain={['dataMin - 500', 'dataMax + 500']}
+                    domain={['dataMin - 100', 'dataMax + 100']}
                   />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }}
@@ -379,7 +382,10 @@ const Dashboard = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-muted-foreground">No recent activity found.</div>
+                <div className="text-center py-12 text-muted-foreground italic text-sm">
+                  History is empty because no orders have "Filled" yet. <br/>
+                  The bot is currently hunting for entries on red days! 🛡️🏹
+                </div>
               )}
             </div>
           )}

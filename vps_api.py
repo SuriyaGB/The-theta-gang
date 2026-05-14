@@ -20,53 +20,71 @@ DB_PATH = "data/thetagang.db"
 LOG_PATH = "bot.log"
 CONFIG_PATH = "thetagang.toml"
 
+def init_db():
+    """Create a table to store parsed history so it is permanent."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS api_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT,
+            symbol TEXT,
+            action TEXT,
+            detail TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
 def get_logs():
     if not os.path.exists(LOG_PATH):
         return []
     try:
         with open(LOG_PATH, 'r', encoding='utf-8', errors='ignore') as f:
             lines = f.readlines()
-            # Return last 5000 lines to cover the full 30-day history progressively
-            return [line.strip() for line in lines[-5000:]]
+            return [line.strip() for line in lines[-500:]] # Only need a small window for Live Terminal
     except:
         return []
 
-def get_shopping_list(logs_all):
+def update_persistent_history(logs_all):
+    """Parses logs and saves new unique decisions to the database."""
     decisions = []
-    current_decision = None
     capture_table = False
     
-    # Scan forward to collect all decisions in order
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
     for line in logs_all:
-        # Check for individual skip messages (like the ones you see now)
         if "Skipping because" in line:
-            symbol_match = re.search(r'([A-Z]+): Skipping', line)
-            symbol = symbol_match.group(1) if symbol_match else "Unknown"
-            decisions.append({
-                "symbol": symbol,
-                "action": "Skip",
-                "detail": line.strip(),
-                "time": "Recent"
-            })
+            # Better regex to catch the symbol at the start of the line or before the colon
+            symbol_match = re.search(r'([A-Z]+):\s*Skipping|Skipping\s+([A-Z]+)', line)
+            symbol = symbol_match.group(1) or symbol_match.group(2) if symbol_match else "AAPL" # Default to AAPL if unclear
+            detail = line.strip()
+            # Check if we already saved this exact decision recently
+            cursor.execute('SELECT id FROM api_history WHERE detail = ? ORDER BY timestamp DESC LIMIT 1', (detail,))
+            if not cursor.fetchone():
+                cursor.execute('INSERT INTO api_history (type, symbol, action, detail) VALUES (?, ?, ?, ?)', 
+                             ('Decision', symbol, 'Skip', detail))
             
-        # Check for the Summary Tables
         if "Put writing summary" in line or "Call writing summary" in line:
             capture_table = True
             continue
         if capture_table and "│" in line and "Symbol" not in line:
             parts = [p.strip() for p in line.split("│")]
             if len(parts) >= 4:
-                decisions.append({
-                    "symbol": parts[1],
-                    "action": parts[2],
-                    "detail": parts[3],
-                    "time": "Scan"
-                })
+                symbol, action, detail = parts[1], parts[2], parts[3]
+                cursor.execute('SELECT id FROM api_history WHERE symbol = ? AND detail = ? ORDER BY timestamp DESC LIMIT 1', (symbol, detail))
+                if not cursor.fetchone():
+                    cursor.execute('INSERT INTO api_history (type, symbol, action, detail) VALUES (?, ?, ?, ?)', 
+                                 ('Decision', symbol, action, detail))
         if capture_table and "└" in line:
             capture_table = False
             
-    # Return last 10 unique decisions to show history
-    return decisions[-10:]
+    conn.commit()
+    conn.close()
 
 def get_active_orders(logs_all):
     orders = []
@@ -78,10 +96,11 @@ def get_active_orders(logs_all):
         if "Symbol" in line and "Exchange" in line and "Contract" in line and capture:
             capture = False
             if orders: break
+
         if capture and "│" in line:
             clean_line = re.sub(r'\[\d+\]', '', line)
             parts = [p.strip() for p in clean_line.split("│")]
-            if len(parts) >= 8 and (parts[0] != "Symbol"):
+            if len(parts) >= 8 and parts[0].isupper() and parts[0] != "SYMBOL":
                 orders.append({
                     "symbol": parts[0],
                     "contract": parts[2],
@@ -141,28 +160,20 @@ def get_live_data():
             rows = cursor.fetchall()
             for pos in rows:
                 positions.append({
-                    "id": pos['id'],
-                    "symbol": pos['symbol'],
-                    "type": pos['sec_type'],
-                    "quantity": pos['position'],
-                    "entryPrice": pos['avg_cost'],
-                    "marketPrice": pos['market_price'],
-                    "pnl": pos['unrealized_pnl'],
+                    "id": pos['id'], "symbol": pos['symbol'], "type": pos['sec_type'], "quantity": pos['position'],
+                    "entryPrice": pos['avg_cost'], "marketPrice": pos['market_price'], "pnl": pos['unrealized_pnl'],
                     "pnlPercent": (pos['unrealized_pnl'] / (pos['avg_cost'] * abs(pos['position']))) * 100 if pos['avg_cost'] and pos['position'] else 0,
                     "theta": 0
                 })
 
         # 3. History
-        cursor.execute('SELECT * FROM executions ORDER BY execution_time DESC LIMIT 20')
+        cursor.execute('SELECT * FROM executions ORDER BY execution_time DESC LIMIT 30')
         rows = cursor.fetchall()
         history = []
         for exec in rows:
             history.append({
-                "id": exec['id'],
-                "time": exec['execution_time'],
-                "symbol": exec['symbol'],
-                "action": f"{exec['side']} ({exec['shares']}@{exec['price']})",
-                "status": "FILLED"
+                "id": exec['id'], "time": exec['execution_time'], "symbol": exec['symbol'],
+                "action": f"{exec['side']} ({exec['shares']}@{exec['price']})", "status": "FILLED"
             })
 
         # 4. Performance
@@ -174,7 +185,6 @@ def get_live_data():
                 s_data = json.loads(r['summary_json'])
                 val = s_data.get('NetLiquidation', {}).get('value', 0)
                 dt = datetime.fromisoformat(r['created_at'].split('.')[0].replace(' ', 'T'))
-                # Use Day + Time for the name so it shows up clearly in your JSON
                 performance.append({
                     "name": dt.strftime('%b %d %H:%M'), 
                     "fullTime": dt.strftime('%Y-%m-%d %H:%M'),
@@ -182,43 +192,39 @@ def get_live_data():
                 })
             except: continue
 
-        # 5. Live Logs and Parsing
-        all_lines = []
+        # 5. Logs and Persistent Parsing
         if os.path.exists(LOG_PATH):
             with open(LOG_PATH, 'r', encoding='utf-8', errors='ignore') as f:
                 all_lines = f.readlines()
-        
+                update_persistent_history(all_lines)
+                active_orders = get_active_orders(all_lines)
+        else:
+            active_orders = []
+
+        # Pull persistent history for the dashboard
+        cursor.execute('SELECT symbol, action, detail, timestamp FROM api_history ORDER BY timestamp DESC LIMIT 15')
+        shopping_list = [{"symbol": r[0], "action": r[1], "detail": r[2], "time": r[3]} for r in cursor.fetchall()]
+
         logs = get_logs()
         symbols = get_config_symbols()
-        shopping_list = get_shopping_list(all_lines)
-        active_orders = get_active_orders(all_lines)
 
-        # 6. Challenge Progress (Use UTC)
+        # 6. Challenge Progress
         start_date = datetime(2026, 5, 13, tzinfo=timezone.utc)
         end_date = datetime(2026, 6, 12, tzinfo=timezone.utc)
         today = datetime.now(timezone.utc)
         days_elapsed = (today - start_date).days + 1
-        days_remaining = (end_date - today).days
-        
         challenge = {
             "day": max(1, days_elapsed),
-            "remaining": max(0, days_remaining),
+            "remaining": max(0, (end_date - today).days),
             "total": 30,
             "percent": min(100, (days_elapsed / 30) * 100)
         }
 
         return {
-            "source": "live-vps",
-            "summary": summary,
-            "positions": positions,
-            "history": history,
-            "performance": performance,
-            "logs": logs,
-            "symbols": symbols,
-            "shoppingList": shopping_list,
-            "activeOrders": active_orders,
-            "challenge": challenge,
-            "lastUpdate": datetime.now(timezone.utc).strftime("%H:%M:%S")
+            "source": "live-vps-pro",
+            "summary": summary, "positions": positions, "history": history, "performance": performance,
+            "logs": logs, "symbols": symbols, "shoppingList": shopping_list, "activeOrders": active_orders,
+            "challenge": challenge, "lastUpdate": datetime.now(timezone.utc).strftime("%H:%M:%S")
         }
 
     except Exception as e:
