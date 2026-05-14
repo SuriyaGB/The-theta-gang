@@ -15,7 +15,8 @@ import {
   LayoutDashboard,
   Briefcase,
   History,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Terminal
 } from 'lucide-react';
 import {
   AreaChart,
@@ -274,6 +275,7 @@ const Dashboard = () => {
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }}
                     itemStyle={{ color: '#3b82f6' }}
+                    labelFormatter={(label, payload) => payload[0]?.payload?.fullTime || label}
                     formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Portfolio Value']}
                   />
                   <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={1} fill="url(#colorValue)" strokeWidth={3} />
@@ -284,7 +286,7 @@ const Dashboard = () => {
 
           {/* Recent Activity / Active Orders */}
           <div className="glass rounded-2xl p-6 border border-border">
-            <h3 className="text-lg font-bold mb-6">Active Orders</h3>
+            <h3 className="text-lg font-bold mb-6">Active Orders (Live)</h3>
             <div className="space-y-4">
               {data.activeOrders && data.activeOrders.length > 0 ? (
                 data.activeOrders.map((order: any, i: number) => (
@@ -302,7 +304,7 @@ const Dashboard = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center h-40 text-slate-500 text-sm italic">
                   <Activity size={32} className="mb-2 opacity-20" />
-                  No open orders
+                  No open orders. Bot is waiting for entry.
                 </div>
               )}
             </div>
@@ -313,12 +315,12 @@ const Dashboard = () => {
         {/* Shopping List Section */}
         {(activeTab === 'dashboard') && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 xl:col-span-3">
-          <div className="glass rounded-2xl p-6 border border-border">
-            <h3 className="text-lg font-bold mb-6">Decision Summary (Shopping List)</h3>
+          <div className="glass rounded-2xl p-6 border border-border max-h-[500px] overflow-y-auto">
+            <h3 className="text-lg font-bold mb-6">Decision History (Last 10 Events)</h3>
             <div className="space-y-3">
               {data.shoppingList && data.shoppingList.length > 0 ? (
-                data.shoppingList.map((item: any, i: number) => (
-                  <div key={i} className="flex items-start gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
+                [...data.shoppingList].reverse().map((item: any, i: number) => (
+                  <div key={i} className="flex items-start gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
                     <div className={`mt-1 w-2 h-2 rounded-full ${item.action === 'Write' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
@@ -327,7 +329,7 @@ const Dashboard = () => {
                           {item.action}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 leading-relaxed">{item.detail}</p>
+                      <p className="text-xs text-slate-400 leading-relaxed font-mono">{item.detail}</p>
                     </div>
                   </div>
                 ))
@@ -432,26 +434,32 @@ const Dashboard = () => {
 
           {/* Logs View */}
           {activeTab === 'logs' && (
-            <div className="xl:col-span-3 glass-card rounded-2xl p-6 overflow-hidden">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Activity size={20} className="text-emerald-500" />
-                  Live Terminal Output
-                </h2>
-                <div className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
-                  Showing last 50 lines
+            <div className="xl:col-span-3 glass rounded-2xl border border-border overflow-hidden flex flex-col h-[700px]">
+              <div className="p-4 border-b border-border bg-slate-800/50 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Terminal size={18} className="text-primary" />
+                  <h3 className="font-bold text-sm">Mission Log Archive (Last 5,000 lines)</h3>
+                </div>
+                <div className="flex items-center gap-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                  <span className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live Streaming
+                  </span>
+                  <span>UTC Engine</span>
                 </div>
               </div>
-              <div className="bg-black/50 rounded-xl p-4 font-mono text-xs md:text-sm overflow-y-auto max-h-[600px] border border-border/50">
-                {logs && logs.length > 0 ? (
-                  logs.map((line: string, i: number) => (
-                    <div key={i} className="py-0.5 border-b border-white/5 last:border-0 text-emerald-500/90 whitespace-pre-wrap">
-                      <span className="text-muted-foreground mr-2 opacity-50">[{i + 1}]</span>
-                      {line}
+              <div className="flex-1 overflow-y-auto p-4 bg-black/40 font-mono text-[11px] leading-relaxed text-slate-300 custom-scrollbar">
+                {data.logs && data.logs.length > 0 ? (
+                  data.logs.map((log: string, i: number) => (
+                    <div key={i} className="py-0.5 hover:bg-white/5 px-2 rounded transition-colors whitespace-pre-wrap">
+                      <span className="text-slate-600 mr-2">[{i + 1}]</span>
+                      {log}
                     </div>
                   ))
                 ) : (
-                  <div className="text-muted-foreground italic">No logs available. Make sure the bot is running and logs are enabled.</div>
+                  <div className="flex items-center justify-center h-full text-slate-500 italic">
+                    Waiting for log data from May 13...
+                  </div>
                 )}
               </div>
             </div>

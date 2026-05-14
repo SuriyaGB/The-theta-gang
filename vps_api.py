@@ -4,7 +4,7 @@ import sqlite3
 import json
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 app = FastAPI()
 
@@ -24,51 +24,60 @@ def get_logs():
     if not os.path.exists(LOG_PATH):
         return []
     try:
-        with open(LOG_PATH, 'r') as f:
+        with open(LOG_PATH, 'r', encoding='utf-8', errors='ignore') as f:
             lines = f.readlines()
-            # Return last 200 lines for the "Live Terminal" view
-            return [line.strip() for line in lines[-200:]]
+            # Return last 5000 lines to cover the full 30-day history progressively
+            return [line.strip() for line in lines[-5000:]]
     except:
         return []
 
 def get_shopping_list(logs_all):
-    shopping_list = []
-    capture = False
-    # Work backwards to find the MOST RECENT summary
-    for line in reversed(logs_all):
-        # In reverse, we hit the bottom of the table first
-        if "└" in line and "───" in line:
-            capture = True
-            continue
-        # In reverse, the header is at the top (last to be hit)
-        if ("Put writing summary" in line or "Call writing summary" in line) and capture:
-            capture = False
-            if shopping_list: break
+    decisions = []
+    current_decision = None
+    capture_table = False
+    
+    # Scan forward to collect all decisions in order
+    for line in logs_all:
+        # Check for individual skip messages (like the ones you see now)
+        if "Skipping because" in line:
+            symbol_match = re.search(r'([A-Z]+): Skipping', line)
+            symbol = symbol_match.group(1) if symbol_match else "Unknown"
+            decisions.append({
+                "symbol": symbol,
+                "action": "Skip",
+                "detail": line.strip(),
+                "time": "Recent"
+            })
             
-        if capture and "│" in line and "Symbol" not in line:
+        # Check for the Summary Tables
+        if "Put writing summary" in line or "Call writing summary" in line:
+            capture_table = True
+            continue
+        if capture_table and "│" in line and "Symbol" not in line:
             parts = [p.strip() for p in line.split("│")]
             if len(parts) >= 4:
-                shopping_list.append({
+                decisions.append({
                     "symbol": parts[1],
                     "action": parts[2],
-                    "detail": parts[3]
+                    "detail": parts[3],
+                    "time": "Scan"
                 })
-    return shopping_list
+        if capture_table and "└" in line:
+            capture_table = False
+            
+    # Return last 10 unique decisions to show history
+    return decisions[-10:]
 
 def get_active_orders(logs_all):
     orders = []
     capture = False
-    # Work backwards to find the MOST RECENT order table
     for line in reversed(logs_all):
-        # In reverse, hit bottom border first
         if "╵" in line and "─────" in line:
             capture = True
             continue
-        # Header is at the top
         if "Symbol" in line and "Exchange" in line and "Contract" in line and capture:
             capture = False
             if orders: break
-
         if capture and "│" in line:
             clean_line = re.sub(r'\[\d+\]', '', line)
             parts = [p.strip() for p in clean_line.split("│")]
@@ -90,10 +99,8 @@ def get_config_symbols():
         symbols = []
         with open(CONFIG_PATH, 'r') as f:
             content = f.read()
-            # More robust regex for [portfolio.symbols.SYMBOL] or [symbol.SYMBOL]
-            matches = re.findall(r'\[\s*(?:portfolio\.)?symbols\.([A-Za-z]+)\s*\]', content)
+            matches = re.findall(r'\[portfolio\.symbols\.([A-Za-z]+)\]', content)
             if matches:
-                # Filter out 'defaults' or other non-symbol keys
                 return list(set([m.upper() for m in matches if m.lower() != 'defaults']))
         return symbols
     except:
@@ -146,13 +153,13 @@ def get_live_data():
                 })
 
         # 3. History
-        cursor.execute('SELECT * FROM executions ORDER BY execution_time DESC LIMIT 10')
+        cursor.execute('SELECT * FROM executions ORDER BY execution_time DESC LIMIT 20')
         rows = cursor.fetchall()
         history = []
         for exec in rows:
             history.append({
                 "id": exec['id'],
-                "time": exec['execution_time'].split('T')[-1].split('.')[0] if 'T' in exec['execution_time'] else exec['execution_time'],
+                "time": exec['execution_time'],
                 "symbol": exec['symbol'],
                 "action": f"{exec['side']} ({exec['shares']}@{exec['price']})",
                 "status": "FILLED"
@@ -167,13 +174,18 @@ def get_live_data():
                 s_data = json.loads(r['summary_json'])
                 val = s_data.get('NetLiquidation', {}).get('value', 0)
                 dt = datetime.fromisoformat(r['created_at'].split('.')[0].replace(' ', 'T'))
-                performance.append({"name": dt.strftime('%b %d'), "value": float(val)})
+                # Use Day + Time for the name so it shows up clearly in your JSON
+                performance.append({
+                    "name": dt.strftime('%b %d %H:%M'), 
+                    "fullTime": dt.strftime('%Y-%m-%d %H:%M'),
+                    "value": float(val)
+                })
             except: continue
 
         # 5. Live Logs and Parsing
         all_lines = []
         if os.path.exists(LOG_PATH):
-            with open(LOG_PATH, 'r') as f:
+            with open(LOG_PATH, 'r', encoding='utf-8', errors='ignore') as f:
                 all_lines = f.readlines()
         
         logs = get_logs()
@@ -181,10 +193,10 @@ def get_live_data():
         shopping_list = get_shopping_list(all_lines)
         active_orders = get_active_orders(all_lines)
 
-        # 6. Challenge Progress
-        start_date = datetime(2026, 5, 13)
-        end_date = datetime(2026, 6, 12)
-        today = datetime.now()
+        # 6. Challenge Progress (Use UTC)
+        start_date = datetime(2026, 5, 13, tzinfo=timezone.utc)
+        end_date = datetime(2026, 6, 12, tzinfo=timezone.utc)
+        today = datetime.now(timezone.utc)
         days_elapsed = (today - start_date).days + 1
         days_remaining = (end_date - today).days
         
@@ -206,7 +218,7 @@ def get_live_data():
             "shoppingList": shopping_list,
             "activeOrders": active_orders,
             "challenge": challenge,
-            "lastUpdate": datetime.now().strftime("%H:%M:%S")
+            "lastUpdate": datetime.now(timezone.utc).strftime("%H:%M:%S")
         }
 
     except Exception as e:
