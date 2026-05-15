@@ -103,7 +103,7 @@ def get_decision_history(logs):
             })
     return decisions
 
-@app.get("/live-proxy")
+@app.get("/api/data")
 async def get_live_data():
     if not os.path.exists(DB_PATH):
         return {"source": "error", "message": "Database not found"}
