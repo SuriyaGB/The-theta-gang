@@ -40,17 +40,28 @@ init_db()
 
 import subprocess
 
+LOG_PATH = "/opt/hermes/data/thetagang_30_days.log"
+
 def get_logs():
-    """Pulls the latest logs directly from the Docker container."""
+    """Reads the latest logs from the master log file."""
+    if os.path.exists(LOG_PATH):
+        try:
+            with open(LOG_PATH, 'r') as f:
+                # Read all lines and take the last 500
+                lines = f.readlines()
+                return [line.strip() for line in lines[-500:]]
+        except Exception as e:
+            return [f"Error reading log file: {str(e)}"]
+    
+    # Fallback to docker logs during transition
     try:
         result = subprocess.run(
             ['docker', 'logs', '--tail', '500', 'thetagang-bot-live'],
-            capture_output=True, text=True, check=True
+            capture_output=True, text=True
         )
-        # Combine stdout and stderr because IBKR/Java often logs to stderr
         return [line.strip() for line in result.stdout.splitlines()] + [line.strip() for line in result.stderr.splitlines()]
-    except Exception as e:
-        return [f"Error fetching Docker logs: {str(e)}"]
+    except:
+        return ["Waiting for mission logs to generate..."]
 
 def update_persistent_history(logs_all):
     """Parses logs and saves new unique decisions to the database."""
