@@ -42,6 +42,7 @@ import subprocess
 
 LOG_PATH = "/opt/hermes/data/thetagang_30_days.log"
 
+# Updated get_logs function: No more Docker references! 
 def get_logs():
     """Reads the latest logs from the master log file."""
     if os.path.exists(LOG_PATH):
@@ -53,15 +54,8 @@ def get_logs():
         except Exception as e:
             return [f"Error reading log file: {str(e)}"]
     
-    # Fallback to docker logs during transition
-    try:
-        result = subprocess.run(
-            ['docker', 'logs', '--tail', '500', 'thetagang-bot-live'],
-            capture_output=True, text=True
-        )
-        return [line.strip() for line in result.stdout.splitlines()] + [line.strip() for line in result.stderr.splitlines()]
-    except:
-        return ["Waiting for mission logs to generate..."]
+    # If the file doesn't exist yet, just wait
+    return ["Waiting for mission logs to generate..."]
 
 def update_persistent_history(logs_all):
     """Parses logs and saves new unique decisions to the database."""
