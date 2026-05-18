@@ -105,6 +105,16 @@ def get_decision_history():
                             "contract": None
                         })
                         continue
+                        
+                    # Catch multi-line details in the table (when the text wraps to the next line)
+                    # e.g., │        │        │ marketPrice=300.44 > close=298.21                          │
+                    cont_match = re.search(r'│\s+│\s+│\s+(.*?)\s+│', line)
+                    if cont_match and decisions:
+                        last_dec = decisions[-1]
+                        # Only append if it looks like a continuation (no action or symbol)
+                        if "│" not in cont_match.group(1):
+                            last_dec['detail'] += " " + cont_match.group(1)
+                            continue
                     
                     # Look for contract finding in subsequent lines
                     # e.g., AAPL: Found suitable contract at strike=285.0 dte=64 price=$6.450
