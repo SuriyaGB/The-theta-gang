@@ -108,7 +108,8 @@ def get_decision_history():
                         
                     # Catch multi-line details in the table (when the text wraps to the next line)
                     # e.g., │        │        │ marketPrice=300.44 > close=298.21                          │
-                    cont_match = re.search(r'│\s+│\s+│\s+(.*?)\s+│', line)
+                    # We must anchor this to ensure the first two columns are exactly 8 empty spaces so we don't catch tracebacks!
+                    cont_match = re.search(r'│\s{8}│\s{8}│\s+(.*?)\s+│', line)
                     if cont_match and decisions:
                         last_dec = decisions[-1]
                         # Only append if it looks like a continuation (no action or symbol)
