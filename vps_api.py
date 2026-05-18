@@ -79,29 +79,35 @@ def get_config_symbols():
     except:
         return []
 
-def get_decision_history(logs):
-    """Parses logs for trading decisions (writing/skipping)."""
+def get_decision_history():
+    """Parses the entire log file for trading decisions (writing/skipping) and returns the most recent 300."""
     decisions = []
-    # Look for table rows in the summary sections
-    for line in logs:
-        # Regex to handle [TIMESTAMP] and then the table row | SYMBOL | ACTION | DETAIL |
-        match = re.search(r'│\s+([A-Z]+)\s+│\s+([A-Za-z]+)\s+│\s+(.*?)\s+│', line)
-        if match:
-            symbol = match.group(1)
-            action = match.group(2)
-            detail = match.group(3)
+    if os.path.exists(LOG_PATH):
+        try:
+            with open(LOG_PATH, 'r') as f:
+                for line in f:
+                    # Regex to handle [TIMESTAMP] and then the table row | SYMBOL | ACTION | DETAIL |
+                    match = re.search(r'│\s+([A-Z]+)\s+│\s+([A-Za-z]+)\s+│\s+(.*?)\s+│', line)
+                    if match:
+                        symbol = match.group(1)
+                        action = match.group(2)
+                        detail = match.group(3)
+                        
+                        # Use the timestamp from the beginning of the line if available
+                        time_match = re.search(r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})', line)
+                        log_time = time_match.group(1).replace('T', ' ') if time_match else "Just now"
+                        
+                        decisions.append({
+                            "symbol": symbol,
+                            "action": action,
+                            "detail": detail,
+                            "time": log_time
+                        })
+        except:
+            pass
             
-            # Use the timestamp from the beginning of the line if available
-            time_match = re.search(r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})', line)
-            log_time = time_match.group(1).replace('T', ' ') if time_match else "Just now"
-            
-            decisions.append({
-                "symbol": symbol,
-                "action": action,
-                "detail": detail,
-                "time": log_time
-            })
-    return decisions
+    # Return only the last 300 decisions to prevent the browser from freezing
+    return decisions[-300:]
 
 @app.get("/api/data")
 async def get_live_data():
@@ -173,7 +179,7 @@ async def get_live_data():
             "logs": logs,
             "symbols": get_config_symbols(),
             "activeOrders": get_active_orders(logs),
-            "shoppingList": get_decision_history(logs),
+            "shoppingList": get_decision_history(),
             "history": history,
             "challenge": {"day": current_day, "remaining": remaining, "total": 30, "percent": percent},
             "lastUpdate": datetime.utcnow().strftime("%H:%M:%S")
