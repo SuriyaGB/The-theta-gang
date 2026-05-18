@@ -47,7 +47,7 @@ def get_logs():
         try:
             with open(LOG_PATH, 'r') as f:
                 lines = f.readlines()
-                return [line.strip() for line in lines[-500:]]
+                return [line.strip() for line in lines[-2000:]]
         except:
             return ["Error reading mission log file."]
     return ["Waiting for mission logs to generate..."]
@@ -151,6 +151,20 @@ async def get_live_data():
 
         logs = get_logs()
         
+        # 4. Challenge Calculation
+        cursor.execute('SELECT created_at FROM account_snapshots ORDER BY created_at ASC LIMIT 1')
+        first_row = cursor.fetchone()
+        if first_row:
+            # Parse the start date and calculate days passed
+            first_dt = datetime.fromisoformat(first_row[0].split('.')[0].replace(' ', 'T'))
+            delta = datetime.now() - first_dt
+            current_day = max(1, delta.days + 1)
+        else:
+            current_day = 1
+            
+        remaining = 30 - current_day
+        percent = min(100, int((current_day / 30) * 100))
+        
         return {
             "source": "live-proxy",
             "status": {"database": "Healthy", "timezone": "UTC", "server": "Online"},
@@ -161,7 +175,7 @@ async def get_live_data():
             "activeOrders": get_active_orders(logs),
             "shoppingList": get_decision_history(logs),
             "history": history,
-            "challenge": {"day": 3, "remaining": 27, "total": 30, "percent": 10},
+            "challenge": {"day": current_day, "remaining": remaining, "total": 30, "percent": percent},
             "lastUpdate": datetime.now().strftime("%H:%M:%S")
         }
     except Exception as e:
