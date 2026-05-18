@@ -46,6 +46,11 @@ const Dashboard = () => {
     source: 'loading'
   });
   const [loading, setLoading] = useState(true);
+  const [expandedLogs, setExpandedLogs] = useState<Record<number, boolean>>({});
+
+  const toggleLog = (index: number) => {
+    setExpandedLogs(prev => ({ ...prev, [index]: !prev[index] }));
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -328,7 +333,11 @@ const Dashboard = () => {
             <div className="space-y-3">
               {data.shoppingList && data.shoppingList.length > 0 ? (
                 [...data.shoppingList].reverse().map((item: any, i: number) => (
-                  <div key={i} className="flex items-start gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors border-b border-white/5 last:border-0 group">
+                  <div 
+                    key={i} 
+                    onClick={() => toggleLog(i)}
+                    className="flex items-start gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors border-b border-white/5 last:border-0 group cursor-pointer"
+                  >
                     <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${item.action === 'Write' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-1">
@@ -341,6 +350,18 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <p className="text-xs text-slate-400 leading-relaxed font-mono break-words">{item.detail}</p>
+                      
+                      {/* Expanded Contract Detail */}
+                      {item.contract && expandedLogs[i] && (
+                        <div className={`mt-3 p-3 bg-black/40 rounded-lg border flex flex-col gap-1 ${item.contract.includes('Failed') ? 'border-rose-500/30' : 'border-emerald-500/30'}`}>
+                          <span className={`text-[10px] font-bold uppercase tracking-widest ${item.contract.includes('Failed') ? 'text-rose-500' : 'text-emerald-500'}`}>
+                            Execution Details
+                          </span>
+                          <span className={`text-xs font-mono ${item.contract.includes('Failed') ? 'text-rose-400' : 'text-emerald-400'}`}>
+                            ↳ {item.contract}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))

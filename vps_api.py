@@ -101,8 +101,25 @@ def get_decision_history():
                             "symbol": symbol,
                             "action": action,
                             "detail": detail,
-                            "time": log_time
+                            "time": log_time,
+                            "contract": None
                         })
+                        continue
+                    
+                    # Look for contract finding in subsequent lines
+                    # e.g., AAPL: Found suitable contract at strike=285.0 dte=64 price=$6.450
+                    contract_match = re.search(r'Found suitable contract at (strike=[^\s]+ dte=[^\s]+ price=[^\s]+)', line)
+                    if contract_match and decisions:
+                        last_dec = decisions[-1]
+                        if last_dec['action'] == 'Write' and not last_dec['contract']:
+                            last_dec['contract'] = contract_match.group(1)
+                            
+                    # Catch cases where it decided to write but failed to find a contract
+                    fail_match = re.search(r'Finding eligible contracts failed', line)
+                    if fail_match and decisions:
+                        last_dec = decisions[-1]
+                        if last_dec['action'] == 'Write' and not last_dec['contract']:
+                            last_dec['contract'] = "Scan Failed: No valid contracts found"
         except:
             pass
             
