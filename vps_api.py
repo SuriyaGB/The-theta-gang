@@ -176,7 +176,7 @@ async def get_live_data():
             "shoppingList": get_decision_history(logs),
             "history": history,
             "challenge": {"day": current_day, "remaining": remaining, "total": 30, "percent": percent},
-            "lastUpdate": datetime.now().strftime("%H:%M:%S")
+            "lastUpdate": datetime.utcnow().strftime("%H:%M:%S")
         }
     except Exception as e:
         return {"source": "error", "message": str(e)}

@@ -65,7 +65,8 @@ const Dashboard = () => {
           activeOrders: json.activeOrders || [],
           challenge: json.challenge || null,
           source: json.source || 'live',
-          status: json.status || { database: 'Unknown', timezone: 'UTC', server: 'Online' }
+          status: json.status || { database: 'Unknown', timezone: 'UTC', server: 'Online' },
+          lastUpdate: json.lastUpdate || null
         });
       } catch (err) {
         console.error('Failed to fetch live data from:', process.env.NEXT_PUBLIC_API_URL);
@@ -152,7 +153,7 @@ const Dashboard = () => {
           <div>
             <h1 className="text-2xl font-bold mb-1">Trading Dashboard v3.2</h1>
             <p className="text-muted-foreground text-sm flex items-center gap-2">
-              <Clock size={14} /> Last update: 13:52 PST
+              <Clock size={14} /> Last update: {data.lastUpdate || '...'} UTC
             </p>
           </div>
 
