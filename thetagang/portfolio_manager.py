@@ -803,6 +803,13 @@ class PortfolioManager:
                         f"{unexpected_orders}"
                     )
 
+            if not self.dry_run:
+                try:
+                    log.info("Querying and recording broker executions...")
+                    await self.ibkr.request_executions()
+                except Exception as exc:
+                    log.warning(f"Failed to query/record executions: {exc}")
+
             log.info("ThetaGang is done, shutting down! Cya next time. :sparkles:")
         except:
             had_error = True

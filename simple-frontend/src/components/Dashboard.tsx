@@ -461,7 +461,7 @@ const Dashboard = () => {
                           <td className="px-6 py-4 text-right font-mono">${pos.entryPrice?.toFixed(2)}</td>
                           <td className="px-6 py-4 text-right font-mono">${pos.marketPrice?.toFixed(2)}</td>
                           <td className={`px-6 py-4 text-right font-bold ${pos.pnl >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-                            +${pos.pnl.toLocaleString()}
+                            {pos.pnl >= 0 ? '+' : '-'}${Math.abs(pos.pnl).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                             <span className="text-[10px] ml-1 opacity-70">({pos.pnlPercent.toFixed(1)}%)</span>
                           </td>
                           <td className="px-6 py-4 text-right text-primary font-mono">${pos.theta}</td>
