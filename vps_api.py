@@ -183,6 +183,51 @@ async def get_live_data():
         cursor.execute('SELECT symbol, side, shares, price, execution_time FROM executions ORDER BY execution_time DESC LIMIT 15')
         history = [{"symbol": r[0], "action": f"{r[1]} ({r[2]}@{r[3]})", "time": r[4], "status": "FILLED"} for r in cursor.fetchall()]
 
+        # 3b. Positions snapshot
+        cursor.execute('SELECT run_id FROM position_snapshots ORDER BY created_at DESC LIMIT 1')
+        run_row = cursor.fetchone()
+        positions = []
+        if run_row:
+            run_id = run_row['run_id']
+            cursor.execute('''
+                SELECT id, symbol, sec_type, position, avg_cost, market_price, 
+                       market_value, unrealized_pnl, realized_pnl, expiry, strike, right
+                FROM position_snapshots
+                WHERE run_id = ?
+            ''', (run_id,))
+            for pos in cursor.fetchall():
+                sec_type = pos['sec_type']
+                symbol = pos['symbol']
+                right = pos['right']
+                strike = pos['strike']
+                expiry = pos['expiry']
+                avg_cost = pos['avg_cost'] or 0.0
+                position_qty = pos['position'] or 0.0
+                market_price = pos['market_price'] or 0.0
+                unrealized_pnl = pos['unrealized_pnl'] or 0.0
+
+                if sec_type == 'OPT':
+                    type_str = f"{'Call' if right in ('C', 'CALL') else 'Put'} Option"
+                    display_symbol = f"{symbol} {expiry} ${strike} {right}"
+                else:
+                    type_str = "Stock"
+                    display_symbol = symbol
+
+                cost_basis = avg_cost * abs(position_qty) * 100 if sec_type == 'OPT' else avg_cost * abs(position_qty)
+                pnl_percent = (unrealized_pnl / cost_basis * 100) if cost_basis else 0.0
+
+                positions.append({
+                    "id": pos['id'],
+                    "symbol": display_symbol,
+                    "type": type_str,
+                    "quantity": int(position_qty),
+                    "entryPrice": avg_cost,
+                    "marketPrice": market_price,
+                    "pnl": unrealized_pnl,
+                    "pnlPercent": pnl_percent,
+                    "theta": 0.00
+                })
+
         logs = get_logs()
         
         # 4. Challenge Calculation
@@ -209,6 +254,7 @@ async def get_live_data():
             "activeOrders": get_active_orders(logs),
             "shoppingList": get_decision_history(),
             "history": history,
+            "positions": positions,
             "challenge": {"day": current_day, "remaining": remaining, "total": 30, "percent": percent},
             "lastUpdate": datetime.utcnow().strftime("%H:%M:%S")
         }
