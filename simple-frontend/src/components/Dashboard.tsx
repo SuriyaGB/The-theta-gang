@@ -39,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <p className="text-xs text-slate-400 mb-2 font-medium">{data.fullTime || label}</p>
         <div className="space-y-1.5">
           <div className="flex justify-between items-center gap-6">
-            <span className="text-xs text-slate-400 font-medium">Portfolio Value:</span>
+            <span className="text-xs text-slate-400 font-medium">Net Liquidation:</span>
             <span className="text-sm font-bold text-blue-400">
               ${Number(data.value).toLocaleString()}
             </span>
@@ -267,9 +267,17 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 xl:col-span-3">
           {/* Main Chart */}
           <div className="lg:col-span-2 glass rounded-2xl p-6 border border-border min-h-[400px]">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
               <h3 className="text-lg font-bold">Portfolio Performance</h3>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
+                  <span className="text-slate-400 font-medium">Net Liquidation</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="w-4 h-0.5 border-t-2 border-dashed border-emerald-500 inline-block"></span>
+                  <span className="text-slate-400 font-medium">Total Cash</span>
+                </div>
                 <span className="px-3 py-1 bg-primary/20 text-primary text-xs font-bold rounded-full">30D Challenge</span>
               </div>
             </div>
@@ -297,6 +305,10 @@ const Dashboard = () => {
                       <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                     </linearGradient>
+                    <linearGradient id="colorCash" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
                   <XAxis 
@@ -319,7 +331,8 @@ const Dashboard = () => {
                     domain={['dataMin - 100', 'dataMax + 100']}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={1} fill="url(#colorValue)" strokeWidth={3} />
+                  <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={1} fill="url(#colorValue)" strokeWidth={3} name="Net Liquidation" />
+                  <Area type="monotone" dataKey="cash" stroke="#10b981" fillOpacity={1} fill="url(#colorCash)" strokeWidth={2} strokeDasharray="5 5" name="Total Cash" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
