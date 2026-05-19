@@ -31,10 +31,38 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-[#0f172a] border border-[#1e293b] rounded-xl p-3 shadow-xl">
+        <p className="text-xs text-slate-400 mb-2 font-medium">{data.fullTime || label}</p>
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center gap-6">
+            <span className="text-xs text-slate-400 font-medium">Portfolio Value:</span>
+            <span className="text-sm font-bold text-blue-400">
+              ${Number(data.value).toLocaleString()}
+            </span>
+          </div>
+          {data.cash !== undefined && (
+            <div className="flex justify-between items-center gap-6">
+              <span className="text-xs text-slate-400 font-medium">Total Cash:</span>
+              <span className="text-sm font-bold text-emerald-400">
+                ${Number(data.cash).toLocaleString()}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [data, setData] = useState<any>({
-    summary: { totalValue: 0, change24h: 0, availableCash: 0, netTheta: 0, deltaExposure: 0, targetBP: 0 },
+    summary: { totalValue: 0, change24h: 0, availableCash: 0, totalCash: 0, netTheta: 0, deltaExposure: 0, targetBP: 0 },
     positions: [],
     history: [],
     performance: [],
@@ -60,7 +88,7 @@ const Dashboard = () => {
         const res = await fetch(fetchUrl);
         const json = await res.json();
         setData({
-          summary: json.summary || { totalValue: 0, change24h: 0, availableCash: 0, netTheta: 0, deltaExposure: 0, targetBP: 0 },
+          summary: json.summary || { totalValue: 0, change24h: 0, availableCash: 0, totalCash: 0, netTheta: 0, deltaExposure: 0, targetBP: 0 },
           positions: json.positions || [],
           history: json.history || [],
           performance: json.performance || [],
@@ -210,11 +238,11 @@ const Dashboard = () => {
             icon={<DollarSign size={20} className="text-emerald-500" />}
           />
           <StatCard
-            title="Excess Liquidity"
-            value={`$${summary.availableCash.toLocaleString()}`}
-            change="Safe"
+            title="Total Cash"
+            value={`$${(summary.totalCash || 0).toLocaleString()}`}
+            change="Available"
             trend="up"
-            icon={<Activity size={20} className="text-primary" />}
+            icon={<DollarSign size={20} className="text-blue-400" />}
           />
           <StatCard
             title="Target BP Usage"
@@ -251,10 +279,18 @@ const Dashboard = () => {
                   // Group data by date to avoid repeating X-axis labels
                   const grouped: any = {};
                   chartData.forEach((d: any) => {
-                    if (!grouped[d.name]) grouped[d.name] = d.value;
-                    else grouped[d.name] = d.value; // Keep latest value for the day
+                    grouped[d.name] = {
+                      value: d.value,
+                      cash: d.cash,
+                      fullTime: d.fullTime
+                    };
                   });
-                  return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+                  return Object.entries(grouped).map(([name, item]: any) => ({
+                    name,
+                    value: item.value,
+                    cash: item.cash,
+                    fullTime: item.fullTime
+                  }));
                 })()}>
                   <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -282,12 +318,7 @@ const Dashboard = () => {
                     tickFormatter={(value) => `$${(value/1000).toFixed(1)}k`}
                     domain={['dataMin - 100', 'dataMax + 100']}
                   />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }}
-                    itemStyle={{ color: '#3b82f6' }}
-                    labelFormatter={(label, payload) => payload[0]?.payload?.fullTime || label}
-                    formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Portfolio Value']}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={1} fill="url(#colorValue)" strokeWidth={3} />
                 </AreaChart>
               </ResponsiveContainer>

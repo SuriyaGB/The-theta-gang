@@ -150,13 +150,14 @@ async def get_live_data():
         # 1. Summary
         cursor.execute('SELECT summary_json FROM account_snapshots ORDER BY created_at DESC LIMIT 1')
         row = cursor.fetchone()
-        summary = {"totalValue": 0, "availableCash": 0, "targetBP": 0, "netTheta": 0, "deltaExposure": 0, "change24h": 0}
+        summary = {"totalValue": 0, "availableCash": 0, "totalCash": 0, "targetBP": 0, "netTheta": 0, "deltaExposure": 0, "change24h": 0}
         if row:
             data = json.loads(row['summary_json'])
             total_val = data.get('NetLiquidation', {}).get('value', 0)
             summary = {
                 "totalValue": float(total_val),
                 "availableCash": float(data.get('AvailableFunds', {}).get('value', 0)),
+                "totalCash": float(data.get('TotalCashValue', {}).get('value', 0)),
                 "targetBP": float(total_val) * 0.5,
                 "netTheta": 0,
                 "deltaExposure": 0,
@@ -171,13 +172,16 @@ async def get_live_data():
             try:
                 s_data = json.loads(r['summary_json'])
                 val = s_data.get('NetLiquidation', {}).get('value', 0)
+                cash = s_data.get('TotalCashValue', {}).get('value', 0)
                 dt = datetime.fromisoformat(r['created_at'].split('.')[0].replace(' ', 'T'))
                 performance.append({
                     "name": dt.strftime('%b %d %H:%M'), 
                     "fullTime": dt.strftime('%Y-%m-%d %H:%M'),
-                    "value": float(val)
+                    "value": float(val),
+                    "cash": float(cash)
                 })
-            except: continue
+            except Exception:
+                continue
 
         # 3. History
         cursor.execute('SELECT symbol, side, shares, price, execution_time FROM executions ORDER BY execution_time DESC LIMIT 15')
