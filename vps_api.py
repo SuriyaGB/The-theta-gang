@@ -209,11 +209,14 @@ async def get_live_data():
                 if sec_type == 'OPT':
                     type_str = f"{'Call' if right in ('C', 'CALL') else 'Put'} Option"
                     display_symbol = f"{symbol} {expiry} ${strike} {right}"
+                    avg_cost_display = avg_cost / 100.0
+                    cost_basis = avg_cost_display * abs(position_qty) * 100
                 else:
                     type_str = "Stock"
                     display_symbol = symbol
+                    avg_cost_display = avg_cost
+                    cost_basis = avg_cost_display * abs(position_qty)
 
-                cost_basis = avg_cost * abs(position_qty) * 100 if sec_type == 'OPT' else avg_cost * abs(position_qty)
                 pnl_percent = (unrealized_pnl / cost_basis * 100) if cost_basis else 0.0
 
                 positions.append({
@@ -221,7 +224,7 @@ async def get_live_data():
                     "symbol": display_symbol,
                     "type": type_str,
                     "quantity": int(position_qty),
-                    "entryPrice": avg_cost,
+                    "entryPrice": avg_cost_display,
                     "marketPrice": market_price,
                     "pnl": unrealized_pnl,
                     "pnlPercent": pnl_percent,
