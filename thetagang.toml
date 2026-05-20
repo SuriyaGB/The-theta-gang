@@ -66,7 +66,7 @@ exchange = "XNYS"
 # and "continue" to continue.
 #
 # Setting this to "continue" is equivalent to disabling this feature.
-action_when_closed = "exit"
+action_when_closed = "continue"
 
 # The maximum amount of time, in seconds, to wait for the market to open if you
 # set `exchange_hours.action_when_closed = "wait"`. For example, a value of 3600
