@@ -317,7 +317,23 @@ const Dashboard = () => {
                     fontSize={10} 
                     tickLine={false} 
                     axisLine={false} 
-                    minTickGap={10}
+                    minTickGap={0}
+                    tickFormatter={(value, index) => {
+                      const performanceData = data.performance || [];
+                      const item = performanceData[index];
+                      if (!item) return "";
+                      
+                      const currentDay = item.name.split(' ').slice(0, 2).join(' '); // e.g. "May 19"
+                      if (index === 0) return currentDay;
+                      
+                      const prevItem = performanceData[index - 1];
+                      const prevDay = prevItem.name.split(' ').slice(0, 2).join(' ');
+                      
+                      if (currentDay !== prevDay) {
+                        return currentDay;
+                      }
+                      return "";
+                    }}
                     angle={-45}
                     textAnchor="end"
                     height={60}
