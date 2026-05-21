@@ -511,7 +511,18 @@ const Dashboard = () => {
                     <tbody className="divide-y divide-border">
                       {positions.map((pos: any) => (
                         <tr key={pos.id} className="hover:bg-accent/30 transition-colors group">
-                          <td className="px-6 py-4 font-medium">{pos.symbol}</td>
+                          <td className="px-6 py-4 font-medium">
+                            {pos.secType === 'OPT' ? (
+                              <div>
+                                <div className="font-semibold text-slate-200">{pos.ticker}</div>
+                                <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+                                  {pos.expiry ? `${pos.expiry.substring(0,4)}-${pos.expiry.substring(4,6)}-${pos.expiry.substring(6,8)}` : ''} • ${pos.strike} {pos.right === 'P' || pos.right === 'PUT' ? 'Put' : 'Call'}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="font-semibold text-slate-200">{pos.ticker || pos.symbol}</div>
+                            )}
+                          </td>
                           <td className="px-6 py-4">
                             <span className={`text-xs px-2 py-1 rounded-full ${pos.type.includes('Call') ? 'bg-primary/20 text-primary' : 'bg-emerald-500/20 text-emerald-500'}`}>
                               {pos.type}

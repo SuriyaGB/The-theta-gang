@@ -226,6 +226,11 @@ async def get_live_data():
                 positions.append({
                     "id": pos['id'],
                     "symbol": display_symbol,
+                    "ticker": symbol,
+                    "expiry": expiry,
+                    "strike": strike,
+                    "right": right,
+                    "secType": sec_type,
                     "type": type_str,
                     "quantity": int(position_qty),
                     "entryPrice": avg_cost_display,
