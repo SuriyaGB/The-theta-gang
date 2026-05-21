@@ -229,34 +229,27 @@ const Dashboard = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <StatCard
             title="Net Liquidation"
-            value={`$${summary.totalValue.toLocaleString()}`}
+            value={`$${summary.totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
             change={`+${summary.change24h}%`}
             trend="up"
             icon={<DollarSign size={20} className="text-emerald-500" />}
           />
           <StatCard
             title="Total Cash"
-            value={`$${(summary.totalCash || 0).toLocaleString()}`}
+            value={`$${(summary.totalCash || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
             change="Available"
             trend="up"
             icon={<DollarSign size={20} className="text-blue-400" />}
           />
           <StatCard
             title="Target BP Usage"
-            value={`$${summary.targetBP?.toLocaleString()}`}
+            value={`$${(summary.targetBP || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
             change="100% Cushion"
             trend="neutral"
             icon={<Briefcase size={20} className="text-amber-500" />}
-          />
-          <StatCard
-            title="Net Theta"
-            value={`$${summary.netTheta.toLocaleString()}/day`}
-            change="Stable"
-            trend="up"
-            icon={<TrendingUp size={20} className="text-rose-500" />}
           />
         </div>
 
@@ -499,32 +492,28 @@ const Dashboard = () => {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-secondary/30 text-muted-foreground text-xs uppercase tracking-wider">
-                        <th className="px-6 py-4 font-medium">Position</th>
-                        <th className="px-6 py-4 font-medium">Type</th>
+                        <th className="px-6 py-4 font-medium">Ticker</th>
+                        <th className="px-6 py-4 font-medium text-center">Expiry</th>
+                        <th className="px-6 py-4 font-medium text-right">Strike</th>
+                        <th className="px-6 py-4 font-medium text-center">Type</th>
                         <th className="px-6 py-4 font-medium text-right">Qty</th>
                         <th className="px-6 py-4 font-medium text-right">Entry</th>
                         <th className="px-6 py-4 font-medium text-right">Market</th>
                         <th className="px-6 py-4 font-medium text-right">P/L</th>
-                        <th className="px-6 py-4 font-medium text-right">Theta</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {positions.map((pos: any) => (
                         <tr key={pos.id} className="hover:bg-accent/30 transition-colors group">
-                          <td className="px-6 py-4 font-medium">
-                            {pos.secType === 'OPT' ? (
-                              <div>
-                                <div className="font-semibold text-slate-200">{pos.ticker}</div>
-                                <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">
-                                  {pos.expiry ? `${pos.expiry.substring(0,4)}-${pos.expiry.substring(4,6)}-${pos.expiry.substring(6,8)}` : ''} • ${pos.strike} {pos.right === 'P' || pos.right === 'PUT' ? 'Put' : 'Call'}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="font-semibold text-slate-200">{pos.ticker || pos.symbol}</div>
-                            )}
+                          <td className="px-6 py-4 font-semibold text-slate-200">{pos.ticker || pos.symbol}</td>
+                          <td className="px-6 py-4 text-center text-muted-foreground font-mono text-xs">
+                            {pos.secType === 'OPT' && pos.expiry ? `${pos.expiry.substring(0,4)}-${pos.expiry.substring(4,6)}-${pos.expiry.substring(6,8)}` : '—'}
                           </td>
-                          <td className="px-6 py-4">
-                            <span className={`text-xs px-2 py-1 rounded-full ${pos.type.includes('Call') ? 'bg-primary/20 text-primary' : 'bg-emerald-500/20 text-emerald-500'}`}>
+                          <td className="px-6 py-4 text-right text-muted-foreground font-mono text-xs">
+                            {pos.secType === 'OPT' && pos.strike ? `$${pos.strike.toFixed(2)}` : '—'}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`text-xs px-2 py-1 rounded-full ${pos.type.includes('Call') ? 'bg-primary/20 text-primary' : pos.type.includes('Put') ? 'bg-emerald-500/20 text-emerald-500' : 'bg-slate-500/20 text-slate-400'}`}>
                               {pos.type}
                             </span>
                           </td>
@@ -535,7 +524,6 @@ const Dashboard = () => {
                             {pos.pnl >= 0 ? '+' : '-'}${Math.abs(pos.pnl).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                             <span className="text-[10px] ml-1 opacity-70">({pos.pnlPercent.toFixed(1)}%)</span>
                           </td>
-                          <td className="px-6 py-4 text-right text-primary font-mono">${pos.theta}</td>
                         </tr>
                       ))}
                     </tbody>
