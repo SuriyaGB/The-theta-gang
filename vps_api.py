@@ -153,16 +153,25 @@ async def get_live_data():
         summary = {"totalValue": 0, "availableCash": 0, "totalCash": 0, "targetBP": 0, "netTheta": 0, "deltaExposure": 0, "change24h": 0}
         if row:
             data = json.loads(row['summary_json'])
-            total_val = data.get('NetLiquidation', {}).get('value', 0)
-            realized_pnl = float(data.get('RealizedPnL', {}).get('value', 0))
-            interest_val = float(data.get('AccruedCash', {}).get('value', 650.50))
+            total_val = float(data.get('NetLiquidation', {}).get('value', 0))
+            total_cash = float(data.get('TotalCashValue', {}).get('value', 0))
+            interest_val = 650.50
+            open_premium = 0.0
+            cursor.execute('SELECT run_id FROM position_snapshots ORDER BY created_at DESC LIMIT 1')
+            pos_run = cursor.fetchone()
+            if pos_run:
+                cursor.execute('SELECT position, avg_cost, sec_type FROM position_snapshots WHERE run_id = ?', (pos_run['run_id'],))
+                for pr in cursor.fetchall():
+                    if pr['sec_type'] == 'OPT':
+                        open_premium += abs(pr['position'] or 0) * (pr['avg_cost'] or 0)
+            realized_profit = round(total_cash - 250000.0 - open_premium - interest_val, 2) if total_cash > 250000 else 0.0
             summary = {
-                "totalValue": float(total_val),
+                "totalValue": total_val,
                 "availableCash": float(data.get('AvailableFunds', {}).get('value', 0)),
-                "totalCash": float(data.get('TotalCashValue', {}).get('value', 0)),
-                "targetBP": float(total_val) * 0.5,
-                "realizedProfit": realized_pnl if realized_pnl != 0 else 415.39,
-                "interest": interest_val if interest_val != 0 else 650.50,
+                "totalCash": total_cash,
+                "targetBP": total_val * 0.5,
+                "realizedProfit": realized_profit,
+                "interest": interest_val,
                 "netTheta": 0,
                 "deltaExposure": 0,
                 "change24h": 0
