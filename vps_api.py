@@ -156,6 +156,7 @@ async def get_live_data():
             total_val = float(data.get('NetLiquidation', {}).get('value', 0))
             total_cash = float(data.get('TotalCashValue', {}).get('value', 0))
             interest_val = 650.50
+            cash_adjustments = 105.02 # May 27 IBKR paper account net cash reset
             open_premium = 0.0
             cursor.execute('SELECT run_id FROM position_snapshots ORDER BY created_at DESC LIMIT 1')
             pos_run = cursor.fetchone()
@@ -164,7 +165,7 @@ async def get_live_data():
                 for pr in cursor.fetchall():
                     if pr['sec_type'] == 'OPT':
                         open_premium += abs(pr['position'] or 0) * (pr['avg_cost'] or 0)
-            realized_profit = round(total_cash - 250000.0 - open_premium - interest_val, 2) if total_cash > 250000 else 0.0
+            realized_profit = round(total_cash - 250000.0 - open_premium - interest_val - cash_adjustments, 2)
             summary = {
                 "totalValue": total_val,
                 "availableCash": float(data.get('AvailableFunds', {}).get('value', 0)),
