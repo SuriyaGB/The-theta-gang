@@ -21,7 +21,7 @@ jobs:
 
       # Checkout latest repository code
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Setup Node.js runtime
       - name: Setup Node.js
